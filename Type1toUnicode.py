@@ -1,4 +1,4 @@
-import logging, os
+import logging, os, datetime
 from json import load, JSONDecodeError
 from sys import exit
 from jellyfish import jaro_winkler_similarity # type: ignore
@@ -55,7 +55,7 @@ class File:
             return load(json_file)
 
     @classmethod
-    def validate(cls,filename, extension):
+    def validate(cls, filename, extension):
         try:
             if not os.path.exists(filename):
                 print(f"File does not exist: {filename}")
@@ -75,6 +75,19 @@ class File:
         except Exception as e:
             print("An exception occurred: ", e)
             exit(5)
+    
+    @classmethod
+    def update_metadata(cls, existing_metadata):
+        now = datetime.datetime.now()
+        formatted_time = 'D:' + now.strftime('%Y%m%d%H%M%S')
+        new_metadata = {
+            '/ModDate': formatted_time,
+            '/Producer': NAME + " " + VERSION
+        }
+
+        updated_metadata = existing_metadata.copy()
+        updated_metadata.update(new_metadata)
+        return updated_metadata
 
 def main():
 
@@ -90,6 +103,8 @@ def main():
     File.validate(args.font_map, '.json')
 
     reader = PdfReader(args.pdf_file)
+    metadata = reader.metadata
+    
     writer = PdfWriter()
 
     logger = logging.getLogger("PdfRepair")
@@ -209,8 +224,11 @@ def main():
     if cnt_rep_comp != 0 or cnt_rep_part !=0:
         for page in reader.pages:
             writer.add_page(page)
+        writer.add_metadata(File.update_metadata(metadata))
         outfile = args.pdf_file.split('.')[0] + '_repaired.pdf'
-        writer.write(outfile)
+        with open(outfile, 'wb') as output_pdf:
+            writer.write(output_pdf)
+
         if args.verbose:
             logger.debug('File "%s", "%s" fonts found, "%s" fonts skipped, "%s" fonts repaired partially, "%s" fonts repaired completely', args.pdf_file, cnt_fonts, cnt_skipped, cnt_rep_part, cnt_rep_comp)
         if cnt_rep_part > 0:
