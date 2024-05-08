@@ -8,7 +8,7 @@ from pypdf import PdfReader, PdfWriter # type: ignore
 from pypdf.generic import NameObject, StreamObject # type: ignore
 
 NAME = 'Type1toUnicode'
-VERSION = '0.3.0'
+VERSION = '0.3.2'
 SUB_TYPE = 'Type1'
 TEMPLATE = \
 """
@@ -38,14 +38,14 @@ class UnicodeMapper:
     
     @classmethod
     def find_similar_font(cls, font_dict, search_font):
-        similarity, return_font = 0, None
+        similarity, return_font, f_name = 0, None, None
         for font_name, mapped_name in font_dict.items():
             jw_sim = jaro_winkler_similarity(font_name, search_font) * 100
             if (jw_sim > similarity) and jw_sim>=70:
-                similarity, return_font = jw_sim, mapped_name
+                similarity, f_name, return_font = jw_sim, font_name, mapped_name
             if(jw_sim < 45 and (lev_ratio(font_name, search_font)*100)>40):
-                similarity, return_font = jw_sim, mapped_name
-        return return_font
+                similarity, f_name, return_font = jw_sim, font_name, mapped_name
+        return f_name, return_font
     
 class File:
 
@@ -110,8 +110,8 @@ def main():
     logger = logging.getLogger("PdfRepair")
     logger.setLevel(logging.DEBUG)
     log_directory = os.path.join (os.getcwd(), 'Log')
-    file_handler = logging.FileHandler(os.path.join(log_directory, f'{args.pdf_file[:-4]}_LOG.txt'), delay=True)
-    formatter = logging.Formatter('%(asctime)s - %(message)s')
+    file_handler = logging.FileHandler(os.path.join(log_directory, f'{args.pdf_file[:-4]}_LOG.txt'), mode='w', delay=True)
+    formatter = logging.Formatter('%(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     if not os.path.exists(log_directory):
@@ -134,15 +134,15 @@ def main():
             cnt_fonts += 1
             _dataobj = data.get_object()
             _subtype = _dataobj['/Subtype']
-            _fontname = _dataobj['/BaseFont']
             if SUB_TYPE not in _subtype:
                 if args.verbose:
-                    logger.debug('Page "%s" -> Font "%s" -> other type than Type1 -> "%s" -> skipping', pagenum+1, _fontname, _subtype)
+                    logger.debug('Page "%s" -> Font has other type than Type1 -> "%s" -> skipping', pagenum+1, _subtype)
                 cnt_skipped += 1
                 continue
+            _fontname = _dataobj['/BaseFont']
             if '/Encoding' not in _dataobj or '/Differences' not in _dataobj['/Encoding']:
                 if args.verbose:
-                    logger.debug('Page "%s" -> Font "%s" -> table Differences does not exists -> skipping', pagenum+1, _fontname)
+                    logger.debug('Page "%s" -> Font "%s" -> table Differences does not exist -> skipping', pagenum+1, _fontname)
                 cnt_skipped += 1
                 continue
 
@@ -167,7 +167,7 @@ def main():
                 cnt_skipped += 1
                 continue
 
-            mapped_fontname = UnicodeMapper.find_similar_font(font_dict, _fontname)
+            alt_fontname, mapped_fontname = UnicodeMapper.find_similar_font(font_dict, _fontname)
             if mapped_fontname is None:
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> no matching mapping name found in JSON file -> skipping', pagenum+1, _fontname)
@@ -175,14 +175,17 @@ def main():
                 continue
 
             if mapped_fontname is not None and mapped_fontname not in _fontname:
-                logger.debug('Page "%s" -> Font "%s" -> mapping assigned, but font name is not in the mapping -> assigned mapping: "%s"', pagenum+1, _fontname, mapped_fontname)
+                logger.debug('Page "%s" -> Font "%s" -> no matching font section found in JSON file -> using alternative name "%s" from section: "%s"', pagenum+1, _fontname, alt_fontname, mapped_fontname)
 
             fchar_hex = f"{fchar:X}".zfill(2)
             lchar_hex = f"{lchar:X}".zfill(2)
             name = f"PAGE{pagenum+1}+{font[1:]}"
             _mapping = []
             for idx, char in enumerate(_dataobj['/Encoding']['/Differences'][1:]):
-                char = char[1:]
+                if not isinstance(char,str):                
+                    char = str(char)
+                else:
+                    char = char[1:]
                 idx = (f"{(idx+fchar):X}".zfill(2))
                 unicode_value = UnicodeMapper.get_unicode_value(json_data, mapped_fontname, char)
                 if unicode_value is None:                                        
