@@ -46,7 +46,7 @@ class UnicodeMapper:
             if(jw_sim < 45 and (lev_ratio(font_name, search_font)*100)>40):
                 similarity, return_font = jw_sim, mapped_name
         return return_font
-
+    
 class File:
 
     @classmethod
@@ -134,13 +134,12 @@ def main():
             cnt_fonts += 1
             _dataobj = data.get_object()
             _subtype = _dataobj['/Subtype']
+            _fontname = _dataobj['/BaseFont']
             if SUB_TYPE not in _subtype:
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> other type than Type1 -> "%s" -> skipping', pagenum+1, _fontname, _subtype)
                 cnt_skipped += 1
                 continue
-
-            _fontname = _dataobj['/BaseFont']
             if '/Encoding' not in _dataobj or '/Differences' not in _dataobj['/Encoding']:
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> table Differences does not exists -> skipping', pagenum+1, _fontname)
@@ -220,10 +219,9 @@ def main():
                     NameObject('/ToUnicode'): _stream_data
                 }
             )
-
     if cnt_rep_comp != 0 or cnt_rep_part !=0:
         for page in reader.pages:
-            writer.add_page(page)
+                 writer.add_page(page)
         writer.add_metadata(File.update_metadata(metadata))
         outfile = args.pdf_file.split('.')[0] + '_repaired.pdf'
         with open(outfile, 'wb') as output_pdf:
@@ -235,7 +233,6 @@ def main():
             print(f'Some font(s) have undefined character(s) mapping, please see log file {args.pdf_file[:-4]}_log.txt in Log directory.')
     else:
         print("No output PDF file created!")
-
     print(f'File {args.pdf_file}, {cnt_fonts} fonts found, {cnt_skipped} fonts skipped, {cnt_rep_part} fonts repaired partially, {cnt_rep_comp} fonts repaired completely')
 
 if __name__ == '__main__':
