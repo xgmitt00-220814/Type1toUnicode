@@ -8,7 +8,7 @@ from pypdf import PdfReader, PdfWriter # type: ignore
 from pypdf.generic import NameObject, StreamObject # type: ignore
 
 NAME = 'Type1toUnicode'
-VERSION = '0.3.2'
+VERSION = '0.3.3'
 SUB_TYPE = 'Type1'
 TEMPLATE = \
 """
@@ -58,22 +58,22 @@ class File:
     def validate(cls, filename, extension):
         try:
             if not os.path.exists(filename):
-                print(f"File does not exist: {filename}")
+                print(f"\033[31mFile does not exist: {filename}\033[0m")
                 exit(2)
 
             _, file_extension = os.path.splitext(filename)
             if file_extension.lower() != extension.lower():
-                print(f"File is not in expected format. Expected {extension}")
+                print(f"\033[31mFile is not in expected format. Expected {extension}\033[0m")
                 exit(3)
 
             if file_extension.lower() == '.json':
                 with open(filename, 'r', encoding='utf-8') as json_file:
                     load(json_file)
-        except JSONDecodeError:
-            print(f"Error in parsing JSON file: {filename}")
+        except JSONDecodeError as e:
+            print(f"\033[31mError in parsing JSON file: {filename}\n{e}\033[0m")
             exit(4)
         except Exception as e:
-            print("An exception occurred: ", e)
+            print(f"\033[31mAn exception occurred: {e}\033[0m")
             exit(5)
     
     @classmethod
@@ -135,7 +135,10 @@ def main():
             _dataobj = data.get_object()
             _subtype = _dataobj['/Subtype']
             if SUB_TYPE not in _subtype:
-                if args.verbose:
+                if '/BaseFont' in _dataobj and args.verbose:
+                    _fontname = _dataobj['/BaseFont']
+                    logger.debug('Page "%s" -> Font "%s" has other type than Type1 -> "%s" -> skipping', pagenum+1, _fontname, _subtype)
+                elif args.verbose:
                     logger.debug('Page "%s" -> Font has other type than Type1 -> "%s" -> skipping', pagenum+1, _subtype)
                 cnt_skipped += 1
                 continue
@@ -148,7 +151,7 @@ def main():
 
             if '/FirstChar' not in _dataobj or '/LastChar' not in _dataobj:
                 if args.verbose:
-                    logger.debug('Page "%s" -> Font "%s" -> character informations do not exist -> skipping', pagenum+1, _fontname)
+                    logger.debug('Page "%s" -> Font "%s" -> FontDescriptor entries missing -> skipping', pagenum+1, _fontname)
                 cnt_skipped += 1
                 continue
 
@@ -233,10 +236,10 @@ def main():
         if args.verbose:
             logger.debug('File "%s", "%s" fonts found, "%s" fonts skipped, "%s" fonts repaired partially, "%s" fonts repaired completely', args.pdf_file, cnt_fonts, cnt_skipped, cnt_rep_part, cnt_rep_comp)
         if cnt_rep_part > 0:
-            print(f'Some font(s) have undefined character(s) mapping, please see log file {args.pdf_file[:-4]}_log.txt in Log directory.')
+            print(f'\033[33mSome font(s) have undefined character(s) mapping, please see log file {args.pdf_file[:-4]}_log.txt in Log directory.\033[0m')
     else:
-        print("No output PDF file created!")
-    print(f'File {args.pdf_file}, {cnt_fonts} fonts found, {cnt_skipped} fonts skipped, {cnt_rep_part} fonts repaired partially, {cnt_rep_comp} fonts repaired completely')
+        print("\033[33mNo output PDF file created!\033[0m'")
+    print(f'\033[32mFile {args.pdf_file}, {cnt_fonts} fonts found, {cnt_skipped} fonts skipped, {cnt_rep_part} fonts repaired partially, {cnt_rep_comp} fonts repaired completely\033[0m')
 
 if __name__ == '__main__':
     main()
