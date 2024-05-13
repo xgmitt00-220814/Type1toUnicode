@@ -6,9 +6,10 @@ from Levenshtein import ratio as lev_ratio # type: ignore
 from argparse import ArgumentParser
 from pypdf import PdfReader, PdfWriter # type: ignore
 from pypdf.generic import NameObject, StreamObject # type: ignore
+from colorama import init  # type: ignore
 
 NAME = 'Type1toUnicode'
-VERSION = '0.3.3'
+VERSION = '0.3.4'
 SUB_TYPE = 'Type1'
 TEMPLATE = \
 """
@@ -90,8 +91,9 @@ class File:
         return updated_metadata
 
 def main():
-
-    cnt_fonts = cnt_skipped = cnt_rep_part = cnt_rep_comp = 0
+    #Colorama initialization
+    init()
+    cnt_skipped = cnt_rep_part = cnt_rep_comp = 0
     error_unicode = None
     argparser = CustomArgumentParser()
     argparser.add_argument('-p', '--pdf_file', type=str, required=True, help='Defines the path to the .pdf file')
@@ -110,7 +112,7 @@ def main():
     logger = logging.getLogger("PdfRepair")
     logger.setLevel(logging.DEBUG)
     log_directory = os.path.join (os.getcwd(), 'Log')
-    file_handler = logging.FileHandler(os.path.join(log_directory, f'{args.pdf_file[:-4]}_LOG.txt'), mode='w', delay=True)
+    file_handler = logging.FileHandler(os.path.join(log_directory, f'{args.pdf_file[:-4]}_log.txt'), mode='w', delay=True)
     formatter = logging.Formatter('%(message)s')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
@@ -119,6 +121,7 @@ def main():
 
     json_data = File.load_json(args.font_map)
     font_dict = {}
+    analyzed_fonts = set()
     for font in json_data['fonts']:
         font_dict[font['name']] = font['name']
         if 'alternativeNames' in font:
@@ -131,18 +134,24 @@ def main():
                     logger.debug('Page "%s" -> no Font objects on the page -> skipping', pagenum+1)
             continue
         for font, data in page['/Resources']['/Font'].items():
-            cnt_fonts += 1
             _dataobj = data.get_object()
             _subtype = _dataobj['/Subtype']
             if SUB_TYPE not in _subtype:
-                if '/BaseFont' in _dataobj and args.verbose:
-                    _fontname = _dataobj['/BaseFont']
-                    logger.debug('Page "%s" -> Font "%s" has other type than Type1 -> "%s" -> skipping', pagenum+1, _fontname, _subtype)
-                elif args.verbose:
-                    logger.debug('Page "%s" -> Font has other type than Type1 -> "%s" -> skipping', pagenum+1, _subtype)
+                if args.verbose:
+                    if '/BaseFont' in _dataobj:
+                        _fontname = _dataobj['/BaseFont']
+                        logger.debug('Page "%s" -> Font "%s" has other type than Type1 -> "%s" -> skipping', pagenum+1, _fontname, _subtype)
+                    else:
+                        logger.debug('Page "%s" -> Font has other type than Type1 -> "%s" -> skipping', pagenum+1, _subtype)
                 cnt_skipped += 1
                 continue
             _fontname = _dataobj['/BaseFont']
+
+            if _fontname in analyzed_fonts:
+                continue
+            else:
+                analyzed_fonts.add(_fontname)
+
             if '/Encoding' not in _dataobj or '/Differences' not in _dataobj['/Encoding']:
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> table Differences does not exist -> skipping', pagenum+1, _fontname)
@@ -158,13 +167,13 @@ def main():
             fchar = _dataobj['/FirstChar']
             lchar = _dataobj['/LastChar']
 
-            if ((lchar+1)-(fchar-1)) != len(_dataobj['/Encoding']['/Differences']):
+            if ((lchar-fchar)+2) != len(_dataobj['/Encoding']['/Differences']):
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> no ToUnicode but Differences incomplete -> skipping', pagenum+1, _fontname)
                 cnt_skipped += 1
                 continue
 
-            if '/ToUnicode' in _dataobj['/Encoding']:
+            if '/ToUnicode' in _dataobj:
                 if args.verbose:
                     logger.debug('Page "%s" -> Font "%s" -> ToUnicode already exists -> skipping', pagenum+1, _fontname)
                 cnt_skipped += 1
@@ -234,12 +243,13 @@ def main():
             writer.write(output_pdf)
 
         if args.verbose:
-            logger.debug('File "%s", "%s" fonts found, "%s" fonts skipped, "%s" fonts repaired partially, "%s" fonts repaired completely', args.pdf_file, cnt_fonts, cnt_skipped, cnt_rep_part, cnt_rep_comp)
+            logger.debug('File "%s", "%s" fonts found, "%s" fonts skipped, "%s" fonts repaired partially, "%s" fonts repaired completely', args.pdf_file, (cnt_skipped+cnt_rep_part+cnt_rep_comp), cnt_skipped, cnt_rep_part, cnt_rep_comp)
         if cnt_rep_part > 0:
-            print(f'\033[33mSome font(s) have undefined character(s) mapping, please see log file {args.pdf_file[:-4]}_log.txt in Log directory.\033[0m')
+            print(f"\033[33mSome font(s) have undefined character(s) mapping, please see log file {args.pdf_file[:-4]}_log.txt in Log directory.\033[0m")
     else:
+        logger.debug('No output PDF file created!')
         print("\033[33mNo output PDF file created!\033[0m'")
-    print(f'\033[32mFile {args.pdf_file}, {cnt_fonts} fonts found, {cnt_skipped} fonts skipped, {cnt_rep_part} fonts repaired partially, {cnt_rep_comp} fonts repaired completely\033[0m')
+    print(f"\033[32mFile {args.pdf_file}, {cnt_skipped+cnt_rep_part+cnt_rep_comp} fonts found, {cnt_skipped} fonts skipped, {cnt_rep_part} fonts repaired partially, {cnt_rep_comp} fonts repaired completely\033[0m")
 
 if __name__ == '__main__':
     main()
