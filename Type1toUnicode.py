@@ -9,7 +9,7 @@ from pypdf.generic import NameObject, StreamObject # type: ignore
 from colorama import init  # type: ignore
 
 NAME = 'Type1toUnicode' #Program name
-VERSION = '0.3.4' #Actual version
+VERSION = '0.4.0' #Actual version
 SUB_TYPE = 'Type1' #Type of the searched fonts
 #ToUnicode table template
 TEMPLATE = \
