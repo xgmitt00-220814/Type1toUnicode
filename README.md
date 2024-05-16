@@ -22,6 +22,7 @@ XXXXXXXXXXXXXXXXXXX
 
 Oprava podporovaných časopisů je téměř stoprocentní, včetně řecké abecedy a jiných "exotických" znaků. Většinou nejdou opravit jen stránky s reklamami, ale ty jsou irelevantní. Je nutné zdůraznit, že **skript umí opravit pouze časopisy A-Radio Praktická Elektronika (2000-současnost), Konstrukční elektronika (2000-2011) a Electus (2000-2007).** Tyto časopisy mají totálně špatné kódování, takže text je v nich "rozsypaný čaj" a nejde v nich vůbec vyhledávat. Časopisy Amatérské rádio (řada A + řada B, později Stavebnice a konstrukce) sice také mají špatné kódování, ale většina textu je čitelná, nesprávně jsou v nich "jen" české znaky. Jsou tedy alespoň částečně použitelné. Skript opravuje PE do roku 2022, postupem času ho budeme aktualizovat. Zde je přehled, co skript aktuálně (verze 0.4.0) umí či neumí opravit:
 
+![obrazek](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/2b769b2f-0112-4e15-bc73-cbdfbcc86088)
 
 
 Je nejasné, proč všechny ty časopisy mají i v roce 2021 špatné kódování textu. Nicméně je/bylo to **Amatérské** radio a ten amatérizmus se holt projevuje i tímto způsobem. Nikdo nejsme dokonalý, i když u firmy, která se celá léta živí vydáváním časopisů, je to celkem... udivující.
