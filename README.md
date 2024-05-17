@@ -10,7 +10,7 @@ Pointa skriptu je, že každý čtenář si může svoji sbírku opravit sám - 
 
 1. Někam na pevný disk z CD/DVD zkopírujte všechny soubory, které chcete opravit. Nejlepší je zachovat původní adresářovou strukturu po jednotlivých ročnících, skript automaticky hledá ve všech podadresářích.
 
-2. Zde z Githubu si stáhněte a do stejného adresáře uložte soubory skriptu. Pro funkci jsou nezbytné jen 4 soubory: [opravAR.exe](opravAR.exe), [magazine_hash.json](magazine_hash.json), [Type1toUnicode.exe](Type1toUnicode.exe) a [to_unicode.json](to_unicode.json). XXXXXXXXXXXX Alternativně můžete stáhnout všechny soubory najednou jako ZIP archív, dělá se to zeleným tlačítkem Code -> Download ZIP.
+2. Zde z Githubu si stáhněte a do stejného adresáře uložte soubory skriptu. Pro funkci jsou nezbytné jen 4 soubory: [opravAR.exe](opravAR.exe), [magazine_hash.json](magazine_hash.json), [Type1toUnicode.exe](Type1toUnicode.exe) a [to_unicode.json](to_unicode.json). Stahování se bohužel nespustí automaticky, u každého souboru musíte kliknout na "Download raw file" vpravo nad obsahem souboru. Alternativně můžete stáhnout všechny soubory najednou jako ZIP archív, dělá se to zeleným tlačítkem Code -> Download ZIP.
 
 3. Spusťte opravAR.exe. Pravděpodobně se objeví modré okno Windows s výstrahou zabezpečení, to musíte potvrdit. Oprava typicky zabere několik minut, podle počtu souborů a výkonu PC. Skript nemá žádné GUI, výsledky jeho činnosti se zobrazují pouze v konzoli příkazové řádky. Většinou se v ní zobrazují pouze zelené řádky se statistikou oprav, u některých ročníků tam jsou i oranžové řádky s varováními. Ty můžete ignorovat. Nikdy by se však neměly objevit červené řádky s chybami.
 
@@ -95,10 +95,9 @@ Then you need to check the logs. Real-world documents usually contain fonts of v
 
 To sum it up: in case 1, your PDF was already completely repaired. If you encounter cases 2, 3 or 4, the fonts can be repaired, but additional work on the JSON file is needed. If the script finishes with "0 fonts repaired completely" and there are only cases 5 or 6 in the logs, then you're out of luck.
 
-**Remember: you should always double-check the output PDFs, even when there are no warnings in the log!'** Probably the easiest way is to select all text (Ctrl+A) and then paste it to an Unicode-capable plaintext editor (such as Notepad++).
+**Remember: you should always double-check the output PDFs, even when there are no warnings in the log!** Probably the easiest way is to select all text (Ctrl+A) and then paste it to an Unicode-capable plaintext editor (such as Notepad++).
 
 ## Analyzing multiple files
-```
 If you want to analyze multiple files at once, you can put them in the same directory as the script and run
 ```
 forfiles /m *.pdf /c "cmd /c Type1toUnicode.exe -p @file -f multi_ascii.json -v" 
@@ -107,7 +106,7 @@ If you want to also recurse into subdirectories, you can use
 ```
 forfiles /s /m *.pdf /c "cmd /c [full path]Type1toUnicode.exe -p @file -f [full path]multi_ascii.json -v"
 ```
-You can mass-analyze contents of the log files too, e.g. seach them for occurences of certain messages with [grep](https://en.wikipedia.org/wiki/Grep) or other pattern-matching utilities.
+You can mass-analyze contents of the log files too, i.e. seach them for occurences of certain messages with [grep](https://en.wikipedia.org/wiki/Grep) or other pattern-matching utilities.
 
 # Font map JSON file and how to create it
 
@@ -115,18 +114,51 @@ So it seems your PDF file(s) could be repaired, but you need to edit or expand t
 
 ## CID, GID and toUnicode tables
 
-The fact that you can copy+paste text from PDFs is more complex that you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter the glyph actually represents. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. Another file size reduction comes from character ordering. Characters have their Character ID (CID), which are stored in the order of their appearance. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS". The characters in the font will be assigned these CIDs:
+The fact that you can copy+paste text from PDFs is more complex that you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter they actually represent. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. Another file size reduction comes from character ordering. Characters have their Character IDs (CID), which are stored in the order of their appearance. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS". The characters in the font will be assigned these CIDs, starting from 1:
 
 | Letter | O |U |R |O |B |O |R |O |S |
-|-|-|-|-|-|-|-|-|-|-|
+|---|---|---|---|---|---|---|---|---|---|
 | CID | 1 |2 |3 |1 |4 |1 |3 |1 |5 |
 
-Notice that CID for letter "O" gets repeated every time it's needed.
+Notice that CID for letter "O" gets repeated every time it's needed. These CIDs are linked with glyphs, so the renderer knows what to display at each CID position. Glyphs have their own Glyph IDs (GID) which may be linked to CIDs like this:
 
-**The first rule: unless absolutely necessary, don't try to completely repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are headings, footnotes, quotes, special characters (greek, math, dingbat etc.)  and other "auxilliary" parts. It's pretty common such fonts contain less than 10 characters and can be omitted.
+| Letter | O |U |R |O |B |O |R |O |S |
+|---|---|---|---|---|---|---|---|---|---|
+| CID | 1 |2 |3 |1 |4 |1 |3 |1 |5 |
+| GID | G79 |G85 |G82 |G79 |G66 |G79 |G82 |G79 |G83 |
 
-**The second rule: if you decide some font is important, then try to make the font map as complete as possible.** 
+There is no official or preferred GID naming scheme. Indeed, we've seen files where the GIDs were just arbitrary numbers, similar to CIDs. **But in Adobe fonts in Adobe products, the GIDs usually have fixed names in Gxxx format. Type1toUnicode can work only because of this fact.**
 
+However, GIDs themselves still don't reliably convey information about which alphabet letter they represent. It works only in prehistoric font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their Unicode equivalent. With OUROBOROS, the toUnicode table would look like this:
+
+| Letter | O |U |R |O |B |O |R |O |S |
+|---|---|---|---|---|---|---|---|---|---|
+| CID | 1 |2 |3 |1 |4 |1 |3 |1 |5 |
+| toUnicode |004F|0055|0052|004F|0042|004F|0052|004F|0053|
+
+**If you copy+paste garbled text from your PDF, it usually means these toUnicode tables are missing.**
+
+## How Type1toUnicode works internally
+
+ Type1toUnicode repairs the documents by generating new toUnicode tables and retroactively inserting them into the PDF files. As mentioned above, it leverages the fact the GIDs usually have fixed names for given characters. This is where the JSON mapping file comes in - if it contains correct GID-Unicode pairs, it can be used to construct valid CID-toUnicode tables. Grossly simplified, it works like this:
+ 
+ **Get a CID -> read GID linked to the CID -> look up the GID in JSON mapping file and get the Unicode value -> add new CID-Unicode pair into the toUnicode table.**
+ 
+ This process has to be repeated for all CIDs in every font, because the PDF standard requires that CID-Unicode table must have exactly the same length as CID-GID table.
+
+## How to find the correct GID-Unicode pairs
+
+This is where the real work begins. 
+
+**The first rule: unless absolutely necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are headings, footnotes, quotes, special characters (greek, math, dingbat etc.)  and other "auxilliary" parts. It's pretty common that such fonts contain less than 10 characters and contribute very little to the document.
+
+**The second rule: if you decide some font is important, then try to make the JSON character map as complete as possible.** This is because CID-Unicode table must always have the same length as CID-GID table. If a GID is not found in the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GIDs matches are found in JSON), the script will replace **all** characters with spaces!!
+
+Okay, so how do you find the GID-Unicode pairs in practice? We've found only one effective way how to do it and it requires commercial software, Infix PDF Editor:
+
+https://www.iceni.com/infix.htm
+
+Fortunately, the company offers cheap monthly subscription, and one month will be more than enough to fine-tune your JSON file.
 
 # The gory details
 
