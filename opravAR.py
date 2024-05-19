@@ -35,12 +35,11 @@ class Hash:
                     with open(file_path, 'rb') as file: # Open the file in binary mode for hashing
                         file_content = file.read() # Read the entire file content into memory
                         file_hash = sha256(file_content).hexdigest() # Compute SHA-256 hash of the file content
-
                         # Compare the file hash with the hashes from the JSON file
                         if file_hash in json_hashes and verbose:
-                            run(['Type1toUnicode.exe', '-p', file_path, '-f', 'to_unicode.json', '-v'], check=True)
+                            run(['Type1toUnicode.exe', '-p', filename, '-f', 'to_unicode.json', '-v'], check=True)
                         elif file_hash in json_hashes:
-                            run(['Type1toUnicode.exe', '-p', file_path, '-f', 'to_unicode.json'], check=True)
+                            run(['Type1toUnicode.exe', '-p', filename, '-f', 'to_unicode.json'], check=True)
                         else:
                             print(f"\033[33mHash not found for file: {filename}\033[0m")
 
