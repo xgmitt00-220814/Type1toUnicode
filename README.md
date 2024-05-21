@@ -250,7 +250,9 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
 
-* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. 
+* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters.
+
+* There are no safeguards against duplicate font/glyph names or other user errors in the JSON file. The script does report its syntax errors, however.
 
 * We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
 
