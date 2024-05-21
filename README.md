@@ -1,4 +1,4 @@
-**This script was originally created to repair encoding in popular Czech hobby magazines. If you wish to apply it to other PDF files, please skip to the next chapter.**
+**This script was originally created to repair encoding in popular czech hobby magazines. If you wish to apply it to other PDF files, please skip to the [next chapter](#before-you-start).**
 
 # Oprava textu v časopisech AMARO
 
@@ -24,28 +24,28 @@ Oprava podporovaných časopisů je téměř stoprocentní, včetně řecké abe
 
 ![Prehled_AR_v040](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/4dafd779-fbe8-4540-8648-d66c8e9a8c9d)
 
-Je nejasné, proč všechny ty časopisy mají i v roce 2022 špatné kódování textu. Nicméně je/bylo to **Amatérské** radio a ten amatérizmus se holt projevuje i tímto způsobem. Nikdo nejsme dokonalý, i když u firmy, která se přes 20 let živí vydáváním časopisů, je to celkem... udivující.
+Je nejasné, proč všechny ty časopisy mají i v roce 2022 špatné kódování textu. Nicméně je/bylo to **Amatérské** radio a ten amatérizmus se holt projevuje i tímto způsobem. Holt nikdo nejsme dokonalý... možná když se firmě AMARO ozve dost čtenářů, tak to po "pouhých" 20+ letech konečně opraví.
 
 Opravný skript vzniknul v rámci diplomové práce "Skripty pro hromadnou úpravu fontů v PDF dokumentech" na [Ústavu telekomunikací](https://www.utko.fekt.vut.cz/) na [Vysokém učení technickém v Brně](https://www.vut.cz/). Tento český a anglický návod byl vytvořen vedoucím práce. XXXXXXXXXXXXX po obhajobe link
 Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (slovensky) nebo anglický návod níže.
 
  # Before you start
 
-You're probably here because you have a PDF file with garbled text - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and Type1toUnicode can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be another way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages will still be garbled.
+You're probably here because you have a PDF file with garbled text - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and Type1toUnicode can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages will still be garbled.
 
-If you don't need to preserve document's fidelity, text can be extracted via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithm still struggle with special and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, this approach is used in practice, for example at the Internet Archive. You can test this for yourself, some of the Czech magazines are hosted there:
+If you don't need to preserve document's fidelity, text can be extracted via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithm still struggle with special and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, this approach is used in practice, for example at the Internet Archive. You can test this for yourself, some of the czech magazines are hosted there:
 
 https://archive.org/details/ARadio.PraktickaElektronika200703/A%20Radio.%20Prakticka%20Elektronika%202007-01/
 
-If you copy+paste text from their web-based viewer, most of it will be OK. But if you download the original PDF and open it Adobe Reader, the copied text will be garbled. Apparently, Internet Archive internally employs ABBYY FineReader to flatten and OCR such problematic PDF documents.
+If you copy+paste text from their web-based viewer, most of it will be OK. But if you download the original PDF and open it in Adobe Reader, the copied text will be garbled. Apparently, Internet Archive internally employs ABBYY FineReader to flatten and OCR such problematic PDF documents.
 
-Our scripts can preserve 100% document fidelity, but the process is not universal and can become rather laborious. Here is a PDF sample before and after repair, provided under [fair use](https://en.wikipedia.org/wiki/Fair_use doctrine):
+Our scripts can preserve 100% document fidelity, but the process is not universal and can become rather laborious. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
 
 [T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). You will probably need only Type1toUnicode, although what opravAR does is explained below. XXXXXXXXXXXXXXXXX The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). You will probably need only Type1toUnicode, although what opravAR does is explained below. The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
@@ -223,32 +223,39 @@ Again, don't rely on it. Even when Infix displays some font in green, it usually
 
 ## Glyph naming schemes and possible problems
 
-Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph (GID) naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the Czech magazines predominantly used Gxxx scheme.
+Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph (GID) naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the czech magazines predominantly used Gxxx scheme.
 
 * First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to lower file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create separate JSON file for every PDF document, but that would be very time-consuming.
 
-* **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. The mapping is usually identical for standard ASCII (codes 32 to 126), then it starts to differ. We don't know which fonts or programs use the gxxx scheme. 
+* **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph name search subroutine is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. Nevertheless, the mapping is usually identical for standard ASCII (codes 32 to 126), only then it starts to differ. We're not sure which fonts or programs use the gxxx scheme. 
 
 * Glyph numbering may not be decadic, but hexadecimal. An example is section for font family MSTT31, near bottom of [to_unicode.json](to_unicode.json). Notice the hexadecimal numbers equal their Unicode code for standard ASCII characters, but start to differ from 80h (128 decadic) upwards.
 
 * In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on.
 
-* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file.
+* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
-# Script opravAR.py for automated repair
+# Script opravAR for user-fiendly repair
 
-As mentioned at the start, Type1toUnicode was originally created to repair encoding in popular Czech hobby magazines. Of course, the magazines are copyrighted. So the idea is that every subscriber can download these scripts and repair copies of the magazines they own. But we had to make sure it would repair only the magazines and nothing else. We couldn't rely on file names, because let's be honest here, most people's HDD is a mess. Thus opravAR searches all directories and subdirectories for PDF files, computes their SHA-256 hash and compares it with a list of known (repairable) magazines. This list is stored in [magazine_hash.json](magazine_hash.json). If a hash match is found, opravAR calls Type1toUnicode which performs the actual repair.
+As mentioned at the beginning, Type1toUnicode was originally created to repair encoding in popular czech hobby magazines. Of course, the magazines are copyrighted. So the idea is that every subscriber can download these scripts and repair their own copies of the magazines. But we had to make sure it would repair only the magazines and nothing else. We couldn't rely on file names, because let's be honest here, most people's HDD is a mess. Thus opravAR searches all directories and subdirectories for PDF files, computes their SHA-256 hash and compares it with a list of known (repairable) magazines. This list is stored in [magazine_hash.json](magazine_hash.json). If a hash match is found, opravAR calls Type1toUnicode which performs the actual repair.
 
 XXXXXXXXXXXXXXXXXXXXx TBD
 
-BTW, "oprav" is "repair" in Czech and "AR" is abbreaviation of magazines' most widely known name "Amatérské radio".
+BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' main title "A-Radio".
 
 # The gory details
 
-# Known issues and limitations
+# Known limitations and issues
+
+* Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced.
+* toUnicode table must be completely missing, Type1toUnicode is designed to ignore fonts with exisitng one.
+* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces. If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. We haven't decided if or how to address this yet.
+* We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
 
 # Possible further work
+Just some ideas in case someone wants to build upon this...
+* Type1toUnicode can repair only fonts that have complete Differences table, i.e. every character is replaced. 
 
 # Credits
-The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This Czech and English manual was created by thesis advisor.
+The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
 
