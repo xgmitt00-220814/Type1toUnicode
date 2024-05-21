@@ -244,6 +244,8 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hierarchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
 
+* When log reports a missing glyph definition, the glyph may be on a different page than indicated in the log. That's because one font may used on multiple pages and the script lists only the first occurence of the font (i.e. not page where the missing glyph is actually used).
+
 * Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
 
 * toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
