@@ -39,7 +39,7 @@ https://archive.org/details/ARadio.PraktickaElektronika200703/A%20Radio.%20Prakt
 
 If you copy+paste text from their web-based viewer, most of it will be OK. But if you download the original PDF and open it Adobe Reader, the copied text will be garbled. Apparently, Internet Archive internally employs ABBYY FineReader to flatten and OCR such problematic PDF documents.
 
-Our scripts can preserve 100% document fidelity, but the process is not universal and can become rather laborious. Here is a PDF sample before and after repair, provided under [fair use](https://en.wikipedia.org/wiki/Fair_use) doctrine:
+Our scripts can preserve 100% document fidelity, but the process is not universal and can become rather laborious. Here is a PDF sample before and after repair, provided under [fair use](https://en.wikipedia.org/wiki/Fair_use doctrine):
 
 [T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
 
@@ -56,7 +56,7 @@ Note that the scripts were developed and tested only with these library versions
 
 # Analyzing your PDF files
 
-As its name implies, Type1toUnicode can repair only Type1 fonts with certain properties. So first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
+As its name implies, Type1toUnicode can repair only Type1 fonts with certain properties. So first you need to determine whether your PDF file(s) can even be repaired by it. We specifically designed the script to help you with such an analysis. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
 
 ```
 the following arguments are required: -p/--pdf_file, -f/--font_map
@@ -70,7 +70,7 @@ options:
                         Defines the path to the .json file
   -v, --verbose         Enable verbose output (prints more information)
 ```
-Apart from your input PDF, you also need a JSON file with font mapping. Its purpose and structure will be explained later, but for starters you can use [multi_ascii.json](multi_ascii.json) from this repository. It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should work on most PDFs generated with Adobe products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped. You will need to construct your own JSON file in such case.  
+Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json) from this repository. It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should work on most PDFs authored with Adobe fonts and/or products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped. You will need to construct your own JSON file in such case.  
 
 BTW, if [multi_ascii.json](multi_ascii.json) works well on your files, test them with [to_unicode.json](to_unicode.json) next. It has the same base, but covers many more characters for european languages and some dingbat fonts.
 
@@ -227,17 +227,21 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to lower file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create separate JSON file for every PDF document, but that would be very time-consuming.
 
-* **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. We don't know which fonts or programs use the gxxx scheme.
+* **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. The mapping is usually identical for standard ASCII (codes 32 to 126), then it starts to differ. We don't know which fonts or programs use the gxxx scheme. 
 
-* Glyph numbering may not be decadic, but hexadecimal. See section for font family MSTT31, near bottom of [to_unicode.json](to_unicode.json).
+* Glyph numbering may not be decadic, but hexadecimal. An example is section for font family MSTT31, near bottom of [to_unicode.json](to_unicode.json). Notice the hexadecimal numbers equal their Unicode code for standard ASCII characters, but start to differ from 80h (128 decadic) upwards.
 
 * In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on.
 
-* In some really old PDF documents, GIDs are simply numbers. These are usually arbitrary and change file by file.
+* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file.
 
+# Script opravAR.py for automated repair
 
+As mentioned at the start, Type1toUnicode was originally created to repair encoding in popular Czech hobby magazines. Of course, the magazines are copyrighted. So the idea is that every subscriber can download these scripts and repair copies of the magazines they own. But we had to make sure it would repair only the magazines and nothing else. We couldn't rely on file names, because let's be honest here, most people's HDD is a mess. Thus opravAR searches all directories and subdirectories for PDF files, computes their SHA-256 hash and compares it with a list of known (repairable) magazines. This list is stored in [magazine_hash.json](magazine_hash.json). If a hash match is found, opravAR calls Type1toUnicode which performs the actual repair.
 
+XXXXXXXXXXXXXXXXXXXXx TBD
 
+BTW, "oprav" is "repair" in Czech and "AR" is abbreaviation of magazines' most widely known name "Amatérské radio".
 
 # The gory details
 
