@@ -33,7 +33,7 @@ Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (sl
 
 You're probably here because you have a PDF file with garbled text - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and Type1toUnicode can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages will still be garbled.
 
-If you don't need to preserve document's fidelity, text can be extracted via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithm still struggle with special and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, this approach is used in practice, for example at the Internet Archive. You can test this for yourself, some of the czech magazines are hosted there:
+If you don't need to preserve document's fidelity, garbled text can be fixed via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithms still struggle with special and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, this approach is used in practice, for example at the Internet Archive. You can test this for yourself, some of the czech magazines are hosted there:
 
 https://archive.org/details/ARadio.PraktickaElektronika200703/A%20Radio.%20Prakticka%20Elektronika%202007-01/
 
@@ -203,7 +203,9 @@ So as the first step, you need to decide which font families you wish to repair 
 ![Infix-click-font](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/c1b98156-0d36-4200-bddf-594ccfe05874)
 
 **Rule #2: if you decide some font family is important, try to make its JSON character map as complete as possible.** You should do this for two reasons:
+
 1. If too many characters are undefined, the log files will become flooded with "Glyph Gxxx not found in mapping" messages, particularly if the document contains multiple fonts from the same family. That makes them hard to read and mass-analyze with tools like grep.
+
 2. As mentioned earlier, the new toUnicode table must always have the same length as CID-GID table. If a GID is not found within the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GIDs are found), the script would replace **all** characters with spaces!!
 
 Okay, so how do you find the GID-Unicode pairs in practice? This is the real reason you'll need Infix PDF Editor; it's probably the only program that can display how each glyph looks like. Suppose you'll see "Font /GKCKNF+Arial062.5 -> Glyph G232 not found in mapping" in the log. You need to load the PDF into Infix and then select "Text -> Remap fonts" in the main menu. This window will open:
@@ -238,6 +240,20 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
+# Known limitations and issues
+
+* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hieararchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
+
+* Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
+
+* toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
+
+* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. 
+
+* We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
+
+* Real-world documents contain many other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
+
 # Script opravAR for user-friendly repair
 
 As mentioned at the beginning, Type1toUnicode was originally created to repair encoding in popular czech hobby magazines. Of course, the magazines are copyrighted. So the idea is that every subscriber can download these scripts and repair their own copies of the magazines. But we had to make sure it would repair only the magazines and nothing else. We couldn't rely on file names, because let's be honest here, most people's HDD is a mess. Thus opravAR searches all directories and subdirectories for PDF files, computes their SHA-256 hash and compares it with a list of known (repairable) magazines. This list is stored in [magazine_hash.json](magazine_hash.json). If a hash match is found, opravAR calls Type1toUnicode which performs the actual repair.
@@ -248,20 +264,12 @@ BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' mai
 
 # The gory details
 
-# Known limitations and issues
-
-
-* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hieararchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
-* Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
-* toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
-* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. 
-* We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
-* Real-world documents contain many other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
 * Manual glyph identification via Infix PDF Editor is still too laborious. Feed the glyphs into OCR and construct JSON mapping automatically? User could only confirm and/or manually correct whatever glyphs OCR doesn't get right.
-* Using image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
+
+* Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
 
 # Credits
 The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
