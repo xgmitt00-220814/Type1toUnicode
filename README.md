@@ -56,7 +56,7 @@ Note that the scripts were developed and tested only with these library versions
 
 # Analyzing your PDF files
 
-As its name implies, Type1toUnicode can repair only Type1 fonts with certain properties. So first you need to determine whether your PDF file(s) can even be repaired by it. We specifically designed the script to help you with such an analysis. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
+As its name implies, Type1toUnicode can repair only [Type1 fonts](https://www.prepressure.com/fonts/basics/type1) with certain properties. So first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
 
 ```
 the following arguments are required: -p/--pdf_file, -f/--font_map
@@ -242,7 +242,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 # Known limitations and issues
 
-* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hieararchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
+* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hierarchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
 
 * Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
 
