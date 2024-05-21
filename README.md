@@ -45,7 +45,7 @@ Our scripts can preserve 100% document fidelity, but the process is not universa
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). You will probably need only Type1toUnicode, although what opravAR does is explained below. The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). You will probably need only Type1toUnicode, although what opravAR does is [explained below](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
@@ -70,7 +70,7 @@ options:
                         Defines the path to the .json file
   -v, --verbose         Enable verbose output (prints more information)
 ```
-Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json) from this repository. It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should work on most PDFs authored with Adobe fonts and/or products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped. You will need to construct your own JSON file in such case.  
+Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json). It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should work on most PDFs authored with Adobe fonts and/or products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped (or replaced with spaces). You will need to construct your own JSON file in such case.  
 
 BTW, if [multi_ascii.json](multi_ascii.json) works well on your files, test them with [to_unicode.json](to_unicode.json) next. It has the same base, but covers many more characters for european languages and some dingbat fonts.
 
@@ -84,15 +84,15 @@ Type1toUnicode -p ABCD.PDF -f multi_ascii.json -v
 ```
 Then you need to check the logs. Real-world documents usually contain fonts of varying types and encodings, sometimes dozens of them. Without going into unnecessary technical details (yet), you may encounter several cases:
 
-1. If the script completely repairs all fonts, only the final statistic will appear in the log and it will say "0 fonts skipped, 0 fonts repaired partially". In other words, only fonts that have some sort of problem get mentioned in the log. 
+1. If the script completely repaired all fonts, only the final statistic will appear in the log and it will say "0 fonts skipped, 0 fonts repaired partially". In other words, only fonts that have some sort of problem get mentioned in the log. 
 
 2. Lines "no matching mapping name found in JSON file -> skipping" mean the script could repair such fonts, but it couldn't find proper mapping section in the JSON file. You need to create such a section, or rename existing one.
 
-3. Lines with "no matching font section found in JSON file -> using alternative name" mean that the fonts were repaired using a "recycled" mapping in JSON file. This is actually a really nifty feature which will be explained later. XXXXXXXXXXXXXXXXXX
+3. Lines with "no matching font section found in JSON file -> using alternative name" mean that the fonts were repaired using a "recycled" mapping in JSON file. This is actually a really nifty feature which will be [explained later](#font-names-matching-and-alternative-names).
 
-4. Lines with "Glyph XYZ not found in mapping" mean the script repaired the font only partially, because the JSON mapping file is incomplete. Total number of such fonts will also appear in the final statistic. If this happens, you **must** add all missing characters to the JSON file, otherwise they will also miss in the repaired text. Again, XXXXXXXXXXXXXXX explains how to do it.
+4. Lines with "Glyph XYZ not found in mapping" mean the script repaired the font only partially, because the JSON mapping file is incomplete. Total number of such fonts will also appear in the final statistic. If this happens, you **must** add all missing characters to the JSON file, otherwise they will also miss in the repaired text. Again, this is [explained later](#how-to-find-the-correct-gid-unicode-pairs).
 
-5.  If you encounter these lines, it either means the associated fonts already have a proper encoding or the script can't repair them:
+5.  If you encounter these lines, it either means the associated fonts already have proper encoding or the script can't repair them:
 * "Font has other type than Type1 -> skipping"
 * "ToUnicode already exists -> skipping"
 * "FontDescriptor entries missing -> skipping"
@@ -101,12 +101,15 @@ Then you need to check the logs. Real-world documents usually contain fonts of v
 
 6. "no Font objects on the page" happens on pages that contain only images, most commonly in scanned documents. You'd need to use an OCR software to extract text from such pages.
 
-To sum it up: in case 1, your PDF was already completely repaired. If you encounter cases 2, 3 or 4, the fonts can be repaired, but additional work on the JSON file is needed. If the script finishes with "0 fonts repaired completely" and there are only cases 5 or 6 in the logs, then you're out of luck.
+**To sum it up:**
+* In case 1, your PDF was already completely repaired.
+* If you encounter cases 2 or 4, the fonts can be repaired, but additional work on the JSON file is needed.
+* If the script finishes with "0 fonts repaired completely" and there are only cases 5 or 6 in the logs, then you're out of luck.
 
 **Remember: you should always double-check the output PDFs, even when there are no warnings in the log!** Probably the easiest way is to select all text (Ctrl+A) and then paste it to an Unicode-capable plaintext editor (such as Notepad++).
 
 ## Analyzing multiple files
-If you want to analyze multiple files at once, you can put them in the same directory as the script and run
+If you want to analyze or repair multiple files at once, you can put them in the same directory as the script and run
 ```
 forfiles /m *.pdf /c "cmd /c Type1toUnicode.exe -p @file -f multi_ascii.json -v" 
 ```
@@ -114,7 +117,7 @@ If you want to also recurse into subdirectories, you can use
 ```
 forfiles /s /m *.pdf /c "cmd /c [full path]Type1toUnicode.exe -p @file -f [full path]multi_ascii.json -v"
 ```
-You can mass-analyze contents of the log files too, i.e. seach them for occurences of certain messages with [grep](https://en.wikipedia.org/wiki/Grep) or other pattern-matching utilities.
+You can mass-analyze contents of the log files too, i.e. seach them for occurences of certain messages with [Grep](https://en.wikipedia.org/wiki/Grep) or other pattern-matching utilities.
 
 # Font map JSON file and how to create it
 
@@ -131,7 +134,7 @@ GKCJHD+Times.New.Roman.tu.n.083.313
 ```
 As you can see, each name starts with random 6-letter string and ends with numbers that represent font's size (height). Moreover, each font family (e.g. Arial vs. Times) can require different glyph mapping (we've encountered such files). Type1toUnicode is designed to deal with both these issues: The JSON file can have separate sections that can hold different maps; each section must have name of the base font family. That's because Type1toUnicode employs a name-matching algorithm to decide which JSON section will be used to fix the respective font. In other words, it recognizes it should use section "Arial", even when the actual font name is much longer.
 
-Having said that, we've found that different font families usually use the same mapping if the PDF was authored in one program. Obviously, it would be impractical to have multiple copies of the same map in the JSON file, just with different section name. Therefore, every section can also have multiple alternative names, as in the example below. If a match is found with one of these alternative names, that section is used during repair. When this happens, lines "no matching font section found in JSON file -> using alternative name AAA from section BBB" appear in the logs.
+Having said that, we've found that different font families usually use the same mapping if the PDF was authored by one program. Obviously, it would be impractical to have multiple copies of the same map in the JSON file, just with different section name. Therefore, every section can also have multiple alternative names, as in the example below. If a match is found with one of these alternative names, that section is used during repair. When this happens, lines "no matching font section found in JSON file -> using alternative name AAA from section BBB" appear in the logs.
 
 ```json
   "product": "ToUnicode map",
@@ -147,7 +150,7 @@ Having said that, we've found that different font families usually use the same 
         "G34": "0022",
         "G35": "0023",
 ```
-The name-matching algorithm may fail to find a match if the full font name is too long. In the example above, notice there are two similar alternative names "ItcEras" and "ItcErasBlackTT". They belong to the same font family, but name GGCNKL+ItcErasBlackTT058.313 was so long that "ItcEras" wasn't sufficient to produce a match. Thus we had to add "ItcErasBlackTT" to the list, too. Similar situation happened with IBMPCDOS font, we had to add it as "+IBMPCDOS0". Such situations are announced by "no matching mapping name found in JSON file -> skipping" messages in the (verbose) logs.
+The name-matching algorithm may fail to find a match if the full font name is too long. In the example above, notice there are two similar alternative names "ItcEras" and "ItcErasBlackTT". They belong to the same font family, but we encountered font name GGCNKL+ItcErasBlackTT058.313 that was so long that "ItcEras" wasn't sufficient to produce a match. Thus we had to add "ItcErasBlackTT" to the list, too. Similar situation happened with IBMPCDOS font, we had to add it as "+IBMPCDOS0". Such situations are announced by "no matching mapping name found in JSON file -> skipping" messages in the (verbose) logs.
 
 Theoretically, the name-matching algorithm may also find wrong matches, i.e. choose wrong map section. We haven't encountered such occurence yet, but there is a possible workaround: sections that are at the top of the JSON file are searched first. So you could fix this by reordering and/or renaming sections within the file.
 
@@ -164,9 +167,9 @@ Notice that CID for letter "O" gets repeated every time it's needed. These CIDs 
 | Letter | O | U | R | B | S |
 |---|---|---|---|---|---|
 | CID | 1 | 2 | 3 | 4 | 5 |
-| GID | G79 |G85 |G82 |G66 |G83 |
+| GID | G79 | G85 | G82 | G66 | G83 |
 
-There is no official or preferred GID naming scheme. Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in Adobe fonts, the GIDs usually have fixed names in Gxxx format. Other PDF authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
+There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in Adobe fonts, the GIDs usually have fixed names in Gxxx format. Other PDF authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
 
 However, GIDs themselves still don't reliably convey information about which letter they represent. It works only in prehistoric font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
 
@@ -179,11 +182,11 @@ However, GIDs themselves still don't reliably convey information about which let
 
 ## How Type1toUnicode works internally
 
- Type1toUnicode repairs the documents by generating new toUnicode tables and inserting them into the PDF files. As mentioned above, it leverages the fact that GIDs usually have fixed names for given letters. This is where the JSON mapping file comes in - if it contains correct GID-Unicode pairs, it can be used to construct valid CID-toUnicode tables. Grossly simplified, it works like this:
+Type1toUnicode repairs the documents by generating new toUnicode tables and inserting them into the PDF files. As mentioned above, it leverages the fact that GIDs usually have fixed names for given letters. This is where the JSON mapping file comes in - if it contains correct GID-Unicode pairs, it can be used to construct valid CID-toUnicode tables. Grossly simplified, it works like this:
  
  **Read a CID -> read GID linked to the CID -> look up the GID in JSON mapping file and get its Unicode value -> add new CID-Unicode pair into the toUnicode table.**
  
- This process has to be repeated for all CIDs in every font, because the PDF standard requires that CID-Unicode table must have exactly the same length as CID-GID table.
+This process has to be repeated for all CIDs in every font, because the PDF standard requires that CID-Unicode table must have exactly the same length as CID-GID table.
 
 ## How to find the correct GID-Unicode pairs
 
@@ -191,11 +194,11 @@ This is where the real work begins, because you may need to manually construct t
 
 https://www.iceni.com/infix.htm
 
-Trial is limited to 30 days, but that should be more than enough to fine-tune your JSON file. Plus, the company offers cheap monthly subscription after that.
+Trial is limited to 30 days which should be more than enough to fine-tune your JSON file. Plus, the company offers cheap monthly subscription after that.
 
 **Rule #1: unless necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are for headings, image labels, special symbols (greek, math, dingbat etc.) and other "auxilliary" content. It's pretty common that such fonts contain less than 10 characters and contribute little practical information. Symbol fonts in particular are very laborious to repair, as we can tell from our experience. Nevertheless, [to_unicode.json](to_unicode.json) does contain maps for some such fonts; we were repairing about 200 similar magazines, so the effort was more justified. Remember: if you want to skip some font family, simply don't put its name anywhere within the JSON file.
  
- So as the first step, you need to decide which font families you wish to repair and which ones you'll ignore. This is where Infix PDF Editor comes in handy for the first time. If you activate "Edit text" mode and click anywhere into text, its font name will be displayed in the small field on the left.
+So as the first step, you need to decide which font families you wish to repair and which ones you'll ignore. This is where Infix PDF Editor comes in handy for the first time. If you activate "Edit text" mode and click anywhere into text, its font name will be displayed in the small field on the left.
  
 ![Infix-click-font](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/c1b98156-0d36-4200-bddf-594ccfe05874)
 
@@ -215,7 +218,7 @@ Infix has another very useful feature, which is a bit hidden. If you select some
 
 ![Infix remap selected](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/69716953-3edb-4833-a71f-8bd2194e57f2)
 
-Notice the small green triangles in the Remap font window. Here Infix displays what it presumes is actual letter the glyph represents. **But don't get fooled by them**, Infix frequently presumes wrong, here it wants to export G232 as "è". Sometimes the triangles turn red; that occurs when Infix is unable to guess the letter, but it doesn't work consistently. Here is how it looks like for font GKCMAE+Arial068.313 from the [sample file](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip):
+Notice the small green triangles in the Remap font window. Here Infix displays what it presumes is actual letter the glyph represents. **But don't get fooled by them**, Infix frequently presumes wrong (it wanted to export G232 as "è", for example). Sometimes the triangles turn red; that occurs when Infix is unable to guess the letter, but it doesn't work consistently. Here is how it looks like for font GKCMAE+Arial068.313 from the [sample file](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip):
 
 ![Infix-remap-red](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/0490fd32-934c-4104-8224-1a96d1c5b9d9)
 
@@ -235,7 +238,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
-# Script opravAR for user-fiendly repair
+# Script opravAR for user-friendly repair
 
 As mentioned at the beginning, Type1toUnicode was originally created to repair encoding in popular czech hobby magazines. Of course, the magazines are copyrighted. So the idea is that every subscriber can download these scripts and repair their own copies of the magazines. But we had to make sure it would repair only the magazines and nothing else. We couldn't rely on file names, because let's be honest here, most people's HDD is a mess. Thus opravAR searches all directories and subdirectories for PDF files, computes their SHA-256 hash and compares it with a list of known (repairable) magazines. This list is stored in [magazine_hash.json](magazine_hash.json). If a hash match is found, opravAR calls Type1toUnicode which performs the actual repair.
 
@@ -247,14 +250,18 @@ BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' mai
 
 # Known limitations and issues
 
-* Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced.
-* toUnicode table must be completely missing, Type1toUnicode is designed to ignore fonts with exisitng one.
-* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces. If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. We haven't decided if or how to address this yet.
+
+* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hieararchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
+* Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
+* toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
+* If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters. 
 * We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
+* Real-world documents contain many other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
-* Type1toUnicode can repair only fonts that have complete Differences table, i.e. every character is replaced. 
+* Manual glyph identification via Infix PDF Editor is still too laborious. Feed the glyphs into OCR and construct JSON mapping automatically? User could only confirm and/or manually correct whatever glyphs OCR doesn't get right.
+* Using image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
 
 # Credits
 The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
