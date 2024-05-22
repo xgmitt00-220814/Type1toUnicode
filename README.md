@@ -176,7 +176,7 @@ However, GIDs themselves still don't reliably convey information about which let
 | Letter | O | U | R | B | S |
 |---|---|---|---|---|---|
 | CID | 1 | 2 | 3 | 4 | 5 |
-| toUnicode |004F|0055|0052|0042|0053|
+| toUnicode | 004F | 0055 | 0052 | 0042 | 0053 |
 
 **If you copy+paste garbled text from your PDF, it usually means these toUnicode tables are missing or are generated incorrectly.**
 
@@ -254,6 +254,8 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * There are no safeguards against duplicate font/glyph names or other user errors in the JSON file. The script does report its syntax errors, however.
 
+* In retrospect, JSON wasn't the best choice to store the mapping data, because it doesn't allow for comments. It would be nice to see what letter each GID-Unicode pair actually represents...
+
 * We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
 
 * Real-world documents contain many other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
@@ -264,6 +266,14 @@ As mentioned at the beginning, Type1toUnicode was originally created to repair e
 
 XXXXXXXXXXXXXXXXXXXXx TBD
 
+If you want to use opravAR, you'll need SHA-256 hashes of files you want to repair. On Windows, you can use its built-in certification utility
+```
+certutil -hashfile ABCD.pdf sha256
+```
+To hash multiple files at once, you can use
+```
+forfiles /m *.pdf /c "cmd /c certutil -hashfile @file sha256" 
+```
 BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' main title "A-Radio".
 
 # The gory details
