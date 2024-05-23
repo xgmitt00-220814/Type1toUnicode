@@ -301,7 +301,13 @@ As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUni
 
 ![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
 
+If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm);  Type1toUnicode needs them to compute how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
 
+![Snooper_first_last](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/3811fff2-16ca-4423-b379-d8930032c0f4)
+
+
+Note that FontDescriptor can be completely miss
+complete Differences table.  In other words, the font must have custom encoding and every character 
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
