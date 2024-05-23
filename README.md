@@ -281,6 +281,9 @@ BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' mai
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
+
+*Type1toUnicode now requires Differences table for all glyphs in the font. Theoretically, it could be modified to also fix fonts that employ the original idea behind Differences, i.e. take some standard encoding like WinANSI and replace only a few glyphs within it. There are many unknowns, for example how to reliably identify the original encoding and GIDs within it.
+
 * Manual glyph identification via Infix PDF Editor is still too laborious. Feed the glyphs into OCR and construct JSON mapping automatically? User could only confirm and/or manually correct whatever glyphs OCR doesn't get right.
 
 * Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
