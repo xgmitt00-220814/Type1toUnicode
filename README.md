@@ -285,7 +285,7 @@ Just some ideas in case someone wants to build upon this...
 
 * Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
 
-* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script could then fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally).
+* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script could then fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstactle.
 
 # Credits
 The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
