@@ -70,7 +70,7 @@ options:
                         Defines the path to the .json file
   -v, --verbose         Enable verbose output (prints more information)
 ```
-Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json). It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should work on most PDFs authored with Adobe fonts and/or products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped (or replaced with spaces). You will need to construct your own JSON file in such case.  
+Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json). It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should mostly work on documents authored with Adobe products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped (or replaced with spaces). You will need to construct your own JSON file in such case.  
 
 BTW, if [multi_ascii.json](multi_ascii.json) works well on your files, test them with [to_unicode.json](to_unicode.json) next. It has the same base, but covers many more characters for european languages and some dingbat fonts.
 
@@ -168,7 +168,7 @@ Notice that CID for letter "O" gets repeated every time it's needed. These CIDs 
 | CID | 1 | 2 | 3 | 4 | 5 |
 | GID | G79 | G85 | G82 | G66 | G83 |
 
-There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in Adobe fonts, the GIDs usually have fixed names in Gxxx format. Other PDF authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
+There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in the magazines, the GIDs usually have fixed names in Gxxx format. Non-Adobe authoring programs may use [different glyph names](#glyph-naming-schemes-and-possible-problems), but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
 
 However, GIDs themselves still don't reliably convey information about which letter they represent. It works only in prehistoric font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
 
@@ -240,15 +240,19 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 * In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
 ## Is there a more effective way to construct the JSON file?
-If there is, we didn't find it and we truly constructed [to_unicode.json](to_unicode.json) one glyph at a time. But at the same time, there must be some pattern for codes 128 to 255, because GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Apparetnly, the the resultant mapping could be affected by two factors:
+If there is, we didn't find it. But there must be some pattern for codes 128 to 255, because GID naming scheme was consistent across about 200 magazines (barring a few exceptions). We suspect the the resultant mapping could be affected by two factors:
 
 1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), there was string "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
+
 https://eng.m.fontke.com/font/11694129/download/
-Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) is has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
+
+Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
 
 ![fontforge](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8343947d-98b7-4fc1-8779-dc7938889c1c)
 
-2. So presumably, the actual GIDs are probably chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" in its metadata.
+2. So presumably, the actual GIDs are chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" as PDF Producer in its metadata. Other magazines list "PageMaker 6.5" in the Application field.
+
+In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
 
 # Known limitations and issues
 
@@ -293,7 +297,11 @@ https://wiki.pdftalk.de/doku.php?id=pdftalksnooper
 
 Sadly, it seems its development has stalled and it outright crashed (unhandled exception) on about 1/5 of files we tried. (Maybe the authors would fix them if enough people asked?) Despite that, it's a very handy tool that can decode and visually display PDF internals. We've been using it extensively.
 
-As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail. Obviously, it works only on Type1 fonts, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font type and encoding combinations. 
+As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail. Obviously, it works only on Type1 fonts, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font type and encoding combinations. Displaying font type is easy and many PDF viewers can do it. Here is how it looks in Adobe Reader XI:
+
+![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
+
+
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
