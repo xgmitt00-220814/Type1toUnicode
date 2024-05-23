@@ -135,7 +135,6 @@ GKCJHD+Times.New.Roman.tu.n.083.313
 As you can see, each name starts with random 6-letter string and ends with numbers that represent font's size (height). Moreover, each font family (e.g. Arial vs. Times) can require different glyph mapping (we've encountered such files). Type1toUnicode is designed to deal with both these issues: The JSON file can have separate sections that can hold different maps; each section must have name of the base font family. That's because Type1toUnicode employs a name-matching algorithm to decide which JSON section will be used to fix the respective font. In other words, it recognizes it should use section "Arial", even when the actual font name is much longer.
 
 Having said that, we've found that different font families usually use the same mapping if the PDF was authored by one program. Obviously, it would be impractical to have multiple copies of the same map in the JSON file, just with different section name. Therefore, every section can also have multiple alternative names, as in the example below. If a match is found with one of these alternative names, that section is used during repair. When this happens, lines "no matching font section found in JSON file -> using alternative name AAA from section BBB" appear in the logs.
-
 ```json
   "product": "ToUnicode map",
   "version": 0.8,
@@ -240,9 +239,20 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
+## Is there a more effective way to construct the JSON file?
+If there is, we didn't find it and we truly constructed [to_unicode.json](to_unicode.json) one glyph at a time. But at the same time, there must be some pattern for codes 128 to 255, because GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Apparetnly, the the resultant mapping could be affected by two factors:
+
+1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), there was string "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
+https://eng.m.fontke.com/font/11694129/download/
+Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) is has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
+
+![fontforge](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8343947d-98b7-4fc1-8779-dc7938889c1c)
+
+2. So presumably, the actual GIDs are probably chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" in its metadata.
+
 # Known limitations and issues
 
-* Type1toUnicode doesn't just inject new toUnicode tables into existing files. It actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hierarchy etc. While it preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost. **Double check the output files!**
+* Type1toUnicode doesn't just inject new toUnicode tables into existing files. The PyPDF library actually completely rebuilds them, so all PDF objects get new IDs, page tree will have different hierarchy etc. While Type1toUnicode preserves metadata, other PDF settings in the root are lost. It's possible other data (attachments, multimedia objects) may get lost, too. **Double check the output files!**
 
 * When log reports a missing glyph definition, the glyph may be on a different page than indicated in the log. That's because one font may used on multiple pages and the script lists only the first occurence of the font (i.e. not page where the missing glyph is actually used).
 
@@ -274,21 +284,27 @@ To hash multiple files at once, you can use
 ```
 forfiles /m *.pdf /c "cmd /c certutil -hashfile @file sha256" 
 ```
-BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' main title "A-Radio".
+BTW, "oprav" means "repair" in Czech and "AR" is abbreaviation of magazines' main title "A-Radio". They're similar to "Popular Electronics" or "Elektor", except they're even older, as they're being published continuously since 1952. 
 
 # The gory details
+Type1toUnicode allows you to analyze fonts within your PDF files (-v switch), but before it existed, we had to do it some other way. Probably the most user-friendly program is PDFtalk Snooper:
 
+https://wiki.pdftalk.de/doku.php?id=pdftalksnooper
+
+Sadly, it seems its development has stalled and it outright crashed (unhandled exception) on about 1/5 of files we tried. (Maybe the authors would fix them if enough people asked?) Despite that, it's a very handy tool that can decode and visually display PDF internals. We've been using it extensively.
+
+As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail. Obviously, it works only on Type1 fonts, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font type and encoding combinations. 
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
 
-*Type1toUnicode now requires Differences table for all glyphs in the font. Theoretically, it could be modified to also fix fonts that employ the original idea behind Differences, i.e. take some standard encoding like WinANSI and replace only a few glyphs within it. There are many unknowns, for example how to reliably identify the original encoding and GIDs within it.
+* Type1toUnicode now requires Differences table for all glyphs in the font. Theoretically, it could be modified to also fix fonts that employ the original idea behind Differences, i.e. take some standard encoding like WinANSI and replace only a few glyphs within it. There are many unknowns, for example how to reliably identify the original encoding and GIDs within it.
 
 * Manual glyph identification via Infix PDF Editor is still too laborious. Feed the glyphs into OCR and construct JSON mapping automatically? User could only confirm and/or manually correct whatever glyphs OCR doesn't get right.
 
 * Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
 
-* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script could then fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstactle.
+* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script would then construct toUnicode tables based on the hashes, not GIDs. It would be possible to fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstacle. Is there an open-source library to separate glyphs in a font's byte string? Infix does it somehow.
 
 # Credits
 The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
