@@ -39,19 +39,23 @@ https://archive.org/details/ARadio.PraktickaElektronika200703/A%20Radio.%20Prakt
 
 If you copy+paste text from their web-based viewer, most of it will be OK. But if you download the original PDF and open it in Adobe Reader, the copied text will be garbled. Apparently, Internet Archive internally employs ABBYY FineReader to flatten and OCR such problematic PDF documents.
 
-Our scripts can preserve 100% document fidelity, but the process is not universal and can become rather laborious. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
+Our scripts can preserve 100% document fidelity, but it can become rather laborious and the PDF files must meet several conditions. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
 
 [T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). You will probably need only Type1toUnicode, although what opravAR does is [explained below](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained below](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
 * Levenshtein		0.25.1		https://rapidfuzz.github.io/Levenshtein/
 * colorama			0.4.6			https://pypi.org/project/colorama/
 
+All can be installed with pip
+```
+pip3 install xxxxxxxx
+```
 Note that the scripts were developed and tested only with these library versions and only on Windows 10. We have no idea if they'd work on other operating systems. Also, you will probably encounter Windows security warnings when you try to run the EXE files for the first time.
 
 # Analyzing your PDF files
@@ -116,6 +120,10 @@ forfiles /m *.pdf /c "cmd /c Type1toUnicode.exe -p @file -f multi_ascii.json -v"
 If you want to also recurse into subdirectories, you can use
 ```
 forfiles /s /m *.pdf /c "cmd /c [full path]Type1toUnicode.exe -p @file -f [full path]multi_ascii.json -v"
+```
+Or alternatively
+```
+FOR /r %a IN (*.pdf) DO Type1toUnicode -p "%a" -f multi_ascii.json -v
 ```
 You can mass-analyze contents of the log files too, i.e. seach them for occurences of certain messages with [Grep](https://en.wikipedia.org/wiki/Grep) or other pattern-matching utilities.
 
@@ -301,7 +309,7 @@ As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUni
 
 ![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
 
-If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm);  Type1toUnicode needs them to compute how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
+If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm);  Type1toUnicode needs them to check how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
 
 ![Snooper_first_last](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/3811fff2-16ca-4423-b379-d8930032c0f4)
 
