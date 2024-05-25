@@ -248,7 +248,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 * In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
 
 ## Is there a more effective way to construct the JSON file?
-If there is, we didn't find it. But there must be some pattern for codes 128 to 255, because GID naming scheme was consistent across about 200 magazines (barring a few exceptions). We suspect the the resultant mapping could be affected by two factors:
+If there is, we didn't find it. But in our case, the GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
 
 1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), there was string "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
 
@@ -261,6 +261,14 @@ Then we loaded it into [open source font editor FontForge](https://fontforge.org
 2. So presumably, the actual GIDs are chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" as PDF Producer in its metadata. Other magazines list "PageMaker 6.5" in the Application field.
 
 In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
+
+BTW, FontForge can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
+
+1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about 2/3 of all files we tried.
+
+2. There is no easy way to switch between fonts within one PDF file. You have to close FontForge, run it again, open the same PDF file and choose a different font.
+
+Infix is much faster to use and far more reliable.
 
 # Known limitations and issues
 
