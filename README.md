@@ -31,7 +31,7 @@ Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (sl
 
  # Before you start
 
-You're probably here because you have a PDF file with garbled text - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and Type1toUnicode can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages will still be garbled.
+You're probably here because you have a PDF file with garbled text - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and Type1toUnicode can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages may still be garbled.
 
 If you don't need to preserve document's fidelity, garbled text can be fixed via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithms still struggle with special and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, this approach is used in practice, for example at the Internet Archive. You can test this for yourself, some of the czech magazines are hosted there:
 
@@ -39,13 +39,13 @@ https://archive.org/details/ARadio.PraktickaElektronika200703/A%20Radio.%20Prakt
 
 If you copy+paste text from their web-based viewer, most of it will be OK. But if you download the original PDF and open it in Adobe Reader, the copied text will be garbled. Apparently, Internet Archive internally employs ABBYY FineReader to flatten and OCR such problematic PDF documents.
 
-Our scripts can preserve 100% document fidelity, but it can become rather laborious and the PDF files must meet several conditions. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
+Our scripts can preserve 100% document fidelity, but the PDF files must meet several conditions. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
 
 [T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained below](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained in later chapter](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
@@ -163,7 +163,7 @@ Theoretically, the name-matching algorithm may also find wrong matches, i.e. cho
 
 ## CID, GID and toUnicode tables
 
-The fact that you can copy+paste text from PDFs is more complex than you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter they actually represent. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. Another file size reduction comes from character ordering. Characters have their Character IDs (CID), which are stored in the order of their appearance. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS". Then the characters will be assigned these CIDs, starting from 1:
+The fact that you can copy+paste text from PDFs is more complex than you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter they actually represent. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. This is called "embedded subset" fonts. Another file size reduction comes from character ordering. Characters have their Character IDs (CID), which are stored in the order of their appearance. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS". Then the characters will be assigned these CIDs, starting from 1:
 
 | Letter | O |U |R |O |B |O |R |O |S |
 |---|---|---|---|---|---|---|---|---|---|
@@ -176,9 +176,9 @@ Notice that CID for letter "O" gets repeated every time it's needed. These CIDs 
 | CID | 1 | 2 | 3 | 4 | 5 |
 | GID | G79 | G85 | G82 | G66 | G83 |
 
-There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in the magazines, the GIDs usually have fixed names in Gxxx format. Non-Adobe authoring programs may use [different glyph names](#glyph-naming-schemes-and-possible-problems), but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
+There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in the magazines, the GIDs usually have fixed names in Gxxx format. Non-Adobe authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
 
-However, GIDs themselves still don't reliably convey information about which letter they represent. It works only in prehistoric font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
+However, GIDs themselves still don't reliably convey information about which letter they represent. It works only in legacy font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
 
 | Letter | O | U | R | B | S |
 |---|---|---|---|---|---|
@@ -203,7 +203,7 @@ https://www.iceni.com/infix.htm
 
 Trial is limited to 30 days which should be more than enough to fine-tune your JSON file. Plus, the company offers cheap monthly subscription after that.
 
-**Rule #1: unless necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are for headings, image labels, special symbols (greek, math, dingbat etc.) and other "auxilliary" content. It's pretty common that such fonts contain less than 10 characters and contribute little practical information. Symbol fonts in particular are very laborious to repair, as we can tell from our experience. Nevertheless, [to_unicode.json](to_unicode.json) does contain maps for some such fonts; we were repairing about 200 similar magazines, so the effort was more justified. Remember: if you want to skip some font family, simply don't put its name anywhere within the JSON file.
+**Rule #1: unless necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are for headings, image labels, special symbols (greek, math, dingbat etc.) and other "auxilliary" content. It's pretty common that such fonts contain less than 10 characters and contribute little practical information. We've even encountered "invisible" fonts - they were in the font list, but they weren't used anywhere within the document. Symbol fonts in particular are very laborious to repair, as we can tell from our experience. Nevertheless, [to_unicode.json](to_unicode.json) does contain maps for some such fonts; we were repairing about 200 similar magazines, so the effort was more justified. Remember: if you want to skip some font family, simply don't put its name anywhere within the JSON file.
  
 So as the first step, you need to decide which font families you wish to repair and which ones you'll ignore. This is where Infix PDF Editor comes in handy for the first time. If you activate "Edit text" mode and click anywhere into text, its font name will be displayed in the small field on the left.
  
@@ -211,15 +211,16 @@ So as the first step, you need to decide which font families you wish to repair 
 
 **Rule #2: if you decide some font family is important, try to make its JSON character map as complete as possible.** You should do this for two reasons:
 
-1. If too many characters are undefined, the log files will become flooded with "Glyph Gxxx not found in mapping" messages, particularly if the document contains multiple fonts from the same family. That makes them hard to read and mass-analyze with tools like grep.
 
-2. As mentioned earlier, the new toUnicode table must always have the same length as CID-GID table. If a GID is not found within the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GIDs are found), the script would replace **all** characters with spaces!!
+1. As mentioned earlier, the new toUnicode table must always have the same length as CID-GID table. If a GID is not found within the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GIDs are found), the script would replace **all** characters with spaces!!
+
+2. If too many characters are undefined, the log files will become flooded with "Glyph Gxxx not found in mapping" messages, particularly if the document contains multiple fonts from the same family. That makes them hard to read and mass-analyze with tools like Grep.
 
 Okay, so how do you find the GID-Unicode pairs in practice? This is the real reason you'll need Infix PDF Editor; it's probably the only user-friendly program that can display how each glyph looks like. Suppose you'll see "Font /GKCKNF+Arial062.5 -> Glyph G232 not found in mapping" in the log. You need to load the PDF into Infix and then select "Text -> Remap fonts" in the main menu. This window will open:
 
 ![Infix remap menu](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/5ca31691-7964-45ee-9ef2-adceb8fd9308)
 
-Then you must select the correct font in the drop-down menu in the upper left corner. Infix will display all glyphs that are present in this font.  Now you have to find glyph G232, their names (GIDs) are displayed in the Raw Glyph field. The problem is, you don't know how the glyph looks like (which letter it represents). And unfortunately, Infix can't sort or filter the glyphs by their name (GID), it always displays them by their CID order. That means you have to manually go through the glyphs until you find G232. In the image, it's small latin letter C with caron, or "č". Now you have to manually find Unicode equivalent for this letter. The simplest way is to google it, but there are also specialized sites with entire Unicode listings, such as [Compart.com](https://www.compart.com/en/unicode/block/U+0100) or [Xah Code](http://xahlee.info/comp/unicode_index.html). These have been really useful when looking up Greek, math and dingbat characters. Either way, letter "č" has Unicode code 010D, which is what you need to add to your JSON file.
+Then you must select the correct font in the drop-down menu in the upper left corner. Infix will display all glyphs that are present in this font. Now you have to find glyph G232, their names (GIDs) are displayed in the Raw Glyph field. The problem is, you don't know how the glyph looks like (which letter it represents). And unfortunately, Infix can't sort or filter the glyphs by their name (GID), it always displays them by their CID order. That means you have to manually go through the glyphs until you find G232. In the image, it's small latin letter C with caron, or "č". Now you have to manually find Unicode equivalent for this letter. The simplest way is to google it, but there are also specialized sites with entire Unicode listings, such as [Compart.com](https://www.compart.com/en/unicode/block/U+0100) or [Xah Code](http://xahlee.info/comp/unicode_index.html). These have been really useful when looking up Greek, math and dingbat characters. Either way, letter "č" has Unicode code 010D, which is what you need to add to your JSON file.
 ```json
         "G232": "010D",
 ```
@@ -237,7 +238,7 @@ Again, don't rely on it. Even when Infix displays some font in green, it usually
 
 Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph (GID) naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the czech magazines predominantly used Gxxx scheme.
 
-* First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to lower file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create separate JSON file for every PDF document, but that would be very time-consuming.
+* First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to optimize file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create separate JSON file for every PDF document, but that would be very time-consuming.
 
 * **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph name search subroutine is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. Nevertheless, the mapping is usually identical for standard ASCII (codes 32 to 126), only then it starts to differ. We're not sure which fonts or programs use the gxxx scheme. 
 
@@ -245,16 +246,16 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on.
 
-* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare separate JSON file for each of them.
+* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
 
 ## Is there a more effective way to construct the JSON file?
-If there is, we didn't find it. But in our case, the GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
+If there is, we didn't find it. In our case, the GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
 
-1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), there was string "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
+1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), it had name "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
 
-https://eng.m.fontke.com/font/11694129/download/
+  https://eng.m.fontke.com/font/11694129/download/
 
-Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
+  Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
 
 ![fontforge](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8343947d-98b7-4fc1-8779-dc7938889c1c)
 
@@ -262,9 +263,9 @@ Then we loaded it into [open source font editor FontForge](https://fontforge.org
 
 In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
 
-BTW, FontForge can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
+BTW, open-source [font editor FontForge](https://fontforge.org/) can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
 
-1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about 2/3 of all files we tried.
+1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about **half** of all files we tried.
 
 2. There is no easy way to switch between fonts within one PDF file. You have to close FontForge, run it again, open the same PDF file and choose a different font.
 
@@ -278,7 +279,7 @@ Infix is much faster to use and far more reliable.
 
 * Type1toUnicode can repair only Type1 fonts that have complete Differences table, i.e. every character (glyph) must be replaced. That's not typical.
 
-* toUnicode table must be completely missing, Type1toUnicode can't be used to repair fonts with exisitng one.
+* toUnicode table must be completely missing, Type1toUnicode can't be used to replace existing one.
 
 * If JSON mapping table is incomplete, Type1toUnicode replaces undefined characters with spaces (U+0020). If you then copy text from the "repaired" file, it looks deceptively "clean", i.e. without any garbled characters.
 
@@ -288,7 +289,7 @@ Infix is much faster to use and far more reliable.
 
 * We've seen documents with multiple fonts whose names were empty strings (even though PDF standard prohibits it). Type1toUnicode's logs and final statistic will count them incorrectly.
 
-* Real-world documents contain many other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
+* Real-world documents may contain other PDF standard violations which can cause erratic behaviour. Your mileage may vary.
 
 # Script opravAR for user-friendly repair
 
@@ -313,11 +314,23 @@ https://wiki.pdftalk.de/doku.php?id=pdftalksnooper
 
 Sadly, it seems its development has stalled and it outright crashed (unhandled exception) on about 1/5 of files we tried. (Maybe the authors would fix them if enough people asked?) Despite that, it's a very handy tool that can decode and visually display PDF internals. We've been using it extensively.
 
-As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail. Obviously, it works only on Type1 fonts, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font type and encoding combinations. Displaying font type is easy and many PDF viewers can do it. Here is how it looks in Adobe Reader XI:
+As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail, so let's list them:
+
+* Must be Type1 font.
+* Its toUnicode table must be missing.
+* FontDescriptor must exist and must contain FirstChar and LastChar entries.
+* All characters in the font must be replaced via Differences table.
+
+For the first point, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font types and encoding combinations. Displaying font type is easy and many PDF viewers can do it. Here is how it looks in Adobe Reader XI:
 
 ![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
 
-If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm);  Type1toUnicode needs them to check how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
+If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. If the font already has a toUnicode table, then it prints "ToUnicode already exists -> skipping" into the log.
+
+Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. We tried to decode the data, but it was too complicated (Type1 fonts are in PostScript, after all). Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally meant as a supplement for legacy encodings like WinANSI or MacRoman. They were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Difference tables contain GIDs in the same order as CIDs, so it was trivial to know which characters was which.
+
+FCH LCH serve as check...
+Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm); Type1toUnicode needs them to check how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
 
 ![Snooper_first_last](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/3811fff2-16ca-4423-b379-d8930032c0f4)
 
