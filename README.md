@@ -321,22 +321,22 @@ As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUni
 * FontDescriptor must exist and must contain FirstChar and LastChar entries.
 * All characters in the font must be replaced via Differences table.
 
-For the first point, read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font types and encoding combinations. Displaying font type is easy and many PDF viewers can do it. Here is how it looks in Adobe Reader XI:
+Read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you some idea about supported font types and encoding combinations. Displaying font type is easy and many PDF viewers can do it. Here is how it looks in Adobe Reader XI:
 
 ![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
 
 If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. If the font already has a toUnicode table, then it prints "ToUnicode already exists -> skipping" into the log.
 
-Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. We tried to decode the data, but it was too complicated (Type1 fonts are in PostScript, after all). Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally meant as a supplement for legacy encodings like WinANSI or MacRoman. They were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Difference tables contain GIDs in the same order as CIDs, so it was trivial to know which characters was which.
+Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. Moreover, CID to GID mapping (or GID order) is normally obtained by decoding Contents, i.e. the actual text that's stored within the document. We tried to decode the data, but it was too complicated - in essence, it would be like partially programming a PDF viewer. 
 
-FCH LCH serve as check...
-Next, Type1toUnicode can repair only fonts that have certain FontDescriptor entries, most importantly FirstChar and LastChar. Here is explanation in [PDF format reference](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm); Type1toUnicode needs them to check how many glyphs the font contains. If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
+Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally devised as a supplement for legacy encodings like WinANSI or MacRoman. These were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Such fonts are then regarded as having "custom encoding", like in the font list above. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Difference tables contain GIDs in the same order as CIDs, making it was unnecessary to decode the contents.
+
+One last obstacle remained - how to check that all characters were really replaced. This is where FirstChar and LastChar entries come in. If LastChar-FirstChar matches the numbner of entries in the Differences table, then it means all characters were replaced. If they're not, the script prints "no ToUnicode but Differences incomplete -> skipping" into the log. In some fonts,  FirstChar, LastChar and/or entire FontDescriptor is missing ([PDF standard allows it](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm)). Type1toUnicode can't repair such fonts and prints "FontDescriptor entries missing -> skipping" messages in the (verbose) logs.
+
+If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
 
 ![Snooper_first_last](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/3811fff2-16ca-4423-b379-d8930032c0f4)
 
-
-Note that FontDescriptor can be completely miss
-complete Differences table.  In other words, the font must have custom encoding and every character 
 
 # Possible further work
 Just some ideas in case someone wants to build upon this...
@@ -347,7 +347,7 @@ Just some ideas in case someone wants to build upon this...
 
 * Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
 
-* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script would then construct toUnicode tables based on the hashes, not GIDs. It would be possible to fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstacle. Is there an open-source library to separate glyphs in a font's byte string? Infix does it somehow.
+* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script would then construct toUnicode tables based on the hashes, not GIDs. It would be possible to fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstacle. It looks like that in FontForge for Arial fonts, but it may be just rendering issue. Is there an open-source library to separate glyphs in a font's byte string? Infix does it somehow.
 
 # Credits
 The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
