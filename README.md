@@ -312,7 +312,11 @@ Type1toUnicode allows you to analyze fonts within your PDF files (-v switch), bu
 
 https://wiki.pdftalk.de/doku.php?id=pdftalksnooper
 
-Sadly, it seems its development has stalled and it outright crashed (unhandled exception) on about 1/5 of files we tried. (Maybe the authors would fix them if enough people asked?) Despite that, it's a very handy tool that can decode and visually display PDF internals. We've been using it extensively.
+It has GUI that can display entire internal PDF object tree and even decode some of the objects. If you want to analyze a font, you need to select the appropriate page and then expand Resources -> Font -> Font Name. Here is how it looks like for [the sample file](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip):
+
+![Snooper_tree](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/fe797bbb-9f00-419b-8d70-1f5af301084c)
+
+Sadly, it seems PDFtalk Snooper's development has stalled and it outright crashed (unhandled exception) on about 1/5 of files we tried. (Maybe the authors would fix them if enough people asked?) Despite that, it's a very handy tool and we've been using it extensively.
 
 As we mentioned in the [analysis chapter](#analyzing-your-pdf-files), Type1toUnicode automatically skips all fonts that don't meet certain criteria. These deserve to be explained in greater detail, so let's list them:
 
@@ -325,11 +329,15 @@ Read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you 
 
 ![Reader_XI_fonts](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8c56af8e-1313-4a6d-8641-d6085b8f3841)
 
-If this condition is not met, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. If the font already has a toUnicode table, then it prints "ToUnicode already exists -> skipping" into the log.
+Obviously, if a font is not Type1 font, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. If a font already has a toUnicode table, then it prints "ToUnicode already exists -> skipping" into the log.
 
-Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. Moreover, CID to GID mapping (or GID order) is normally obtained by decoding Contents, i.e. the actual text that's stored within the document. We tried to decode the data, but it was too complicated - in essence, it would be like partially programming a PDF viewer. 
+Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. Moreover, CID to GID mapping (or GID order) is normally obtained by decoding Contents, i.e. the actual text that's stored within the document. We tried to decode the data, but it was too complicated - in essence, it would be like partially programming a PDF viewer. PDFtalk Snooper doesn't help much here - you can view the data if you expand Font Name -> FontDescriptor -> FontFile:PDFStream -> Internal sub-tree, but PostScript interpreter would be needed to get anything meaningful.
 
-Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally devised as a supplement for legacy encodings like WinANSI or MacRoman. These were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Such fonts are then regarded as having "custom encoding", like in the font list above. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Difference tables contain GIDs in the same order as CIDs, making it was unnecessary to decode the contents.
+![Snooper_internal](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/961f82a6-cd31-4222-86bb-c1272b903ca5)
+
+Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally devised as a supplement for legacy encodings like WinANSI or MacRoman. These were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Such fonts are then regarded as having "custom encoding", like in the font list above. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Differences tables contain GIDs in the same order as CIDs, making it was unnecessary to decode the contents. If a font has Differences table, you can view it if you expand its Encodning subtree in PDFtalk Snooper:
+
+![Snooper_Differences](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/cd3b540d-bef0-44f7-b60c-41e2e490a5b1)
 
 One last obstacle remained - how to check that all characters were really replaced. This is where FirstChar and LastChar entries come in. If LastChar-FirstChar matches the numbner of entries in the Differences table, then it means all characters were replaced. If they're not, the script prints "no ToUnicode but Differences incomplete -> skipping" into the log. In some fonts,  FirstChar, LastChar and/or entire FontDescriptor is missing ([PDF standard allows it](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm)). Type1toUnicode can't repair such fonts and prints "FontDescriptor entries missing -> skipping" messages in the (verbose) logs.
 
