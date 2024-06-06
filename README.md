@@ -61,7 +61,7 @@ Note that the scripts were developed and tested only with these library versions
 
 # Analyzing your PDF files
 
-As its name implies, Type1toUnicode can repair only [Type1 fonts](https://www.prepressure.com/fonts/basics/type1) with certain properties. So first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
+Since Type1toUnicode has some limitations, first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. Most importantly, the script can repair only [one PDF font type](https://www.prepressure.com/fonts/basics/type1), that's why we've chosen such a "weird" name. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
 
 ```
 the following arguments are required: -p/--pdf_file, -f/--font_map
@@ -75,7 +75,7 @@ options:
                         Defines the path to the .json file
   -v, --verbose         Enable verbose output (prints more information)
 ```
-Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json). It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should mostly work on documents authored with Adobe products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped (or replaced with spaces). You will need to construct your own JSON file in such case.  
+Apart from your input PDF, you'll also need a JSON file with font mapping. Its purpose and structure will be [explained later](#font-map-json-file-and-how-to-create-it), but for starters you can use [multi_ascii.json](multi_ascii.json). It covers most popular fonts names, but contains only mapping for standard ASCII characters (codes 32 to 126). It should mostly work on documents authored with older Adobe products. Unfortunately, that also means it may not work on PDFs from other programs or it may assign wrong character codes. If that happens, repaired text won't be completely garbled anymore, but letters will be randomly swapped (or replaced with spaces). You will need to construct your own JSON file in such case.  
 
 BTW, if [multi_ascii.json](multi_ascii.json) works well on your files, test them with [to_unicode.json](to_unicode.json) next. It has the same base, but covers many more characters for european languages and some dingbat fonts.
 
@@ -83,11 +83,11 @@ When the script finishes, it will print a short statistic like
 ```
 File ABCD.PDF, 76 fonts found, 16 fonts skipped, 40 fonts repaired partially, 20 fonts repaired completely
 ```
-The script also generates a subdirectory with log files for every PDF file. The optional -v argument greatly expands these logs to allow for better font analysis. You need to enable these verbose logs, so the actual command will look like
+If it manages to repair some font(s), it will create an output PDF file with suffix _repaired (so ABCD_repaired.pdf in our case). The script also generates a subdirectory with log files for every PDF file. The optional -v argument greatly expands these logs to allow for better analysis. You need to enable these verbose logs, so the actual command will look like
 ```
 Type1toUnicode -p ABCD.PDF -f multi_ascii.json -v
 ```
-Then you need to check the logs. Real-world documents usually contain fonts of varying types and encodings, sometimes dozens of them. Without going into unnecessary technical details (yet), you may encounter several cases:
+Note that Type1toUnicode always tries to fix the files, even when you use the -v argument. Therefore, it also generates the output files every time you run it. It's designed to automatically overwrite them, so you don't need to delete them manually. After the initial run, you need to check the (verbose) logs. Real-world documents usually contain fonts of varying types and encodings, sometimes dozens of them. Without going into unnecessary technical details (yet), you may encounter several cases:
 
 1. If the script completely repaired all fonts, only the final statistic will appear in the log and it will say "0 fonts skipped, 0 fonts repaired partially". In other words, only fonts that have some sort of problem get mentioned in the log. 
 
@@ -103,17 +103,19 @@ Then you need to check the logs. Real-world documents usually contain fonts of v
 * "FontDescriptor entries missing -> skipping"
 * "table Differences does not exist -> skipping"
 * "no ToUnicode but Differences incomplete  -> skipping"
+Obviously, all such fonts increase the "XX fonts skipped" counter in the final statistic.
 
 6. "no Font objects on the page" happens on pages that contain only images, most commonly in scanned documents. You'd need to use an OCR software to extract text from such pages.
 
 **To sum it up:**
 * In case 1, your PDF was already completely repaired.
 * If you encounter cases 2 or 4, the fonts can be repaired, but additional work on the JSON file is needed.
-* If the script finishes with "0 fonts repaired completely" and there are only cases 5 or 6 in the logs, then you're out of luck.
+* If the script finishes with "0 fonts repaired partially, 0 fonts repaired completely" and there are only cases 5 or 6 in the logs, then you're out of luck.
 
 **Remember: you should always double-check the output PDFs, even when there are no warnings in the log!** Probably the easiest way is to select all text (Ctrl+A) and then paste it to an Unicode-capable plaintext editor (such as Notepad++).
 
 ## Analyzing multiple files
+
 If you want to analyze or repair multiple files at once, you can put them in the same directory as the script and run
 ```
 forfiles /m *.pdf /c "cmd /c Type1toUnicode.exe -p @file -f multi_ascii.json -v" 
@@ -130,7 +132,7 @@ You can mass-analyze contents of the log files too, i.e. seach them for occurenc
 
 # Font map JSON file and how to create it
 
-So it seems your PDF file(s) could be repaired, but you need to edit or expand the font map file. It's not hard, but be warned it can get quite laborious. To do this effectively, you first need to understand what Type1toUnicode and JSON map file actually do.
+So it seems your PDF file(s) could be repaired, but you need to edit or expand the font map file. It's not hard, but be warned it can get quite laborious. To do this effectively, you should take a while to understand what Type1toUnicode and JSON map file actually do.
 
 ## Font names matching and alternative names
 
@@ -164,47 +166,47 @@ Theoretically, the name-matching algorithm may also find wrong matches, i.e. cho
 
 ## CID, GID and toUnicode tables
 
-The fact that you can copy+paste text from PDFs is more complex than you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter they actually represent. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. This is called "embedded subset" fonts. Another file size reduction comes from character ordering. Characters have their Character IDs (CID), which are stored in the order of their appearance. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS". Then the characters will be assigned these CIDs, starting from 1:
+The fact that you can copy+paste text from PDFs is more complex than you probably think. What you see on the screen are just glyphs, graphical symbols that may or may not contain information about which alphabet letter they actually represent. Moreover, PDF supports several schemes to reduce overall file size, so it typically stores only glyphs that are needed to render the given document. This is called "embedded subset" fonts. Another file size reduction comes from character ordering. In Type1 fonts, characters are ordered by their appearance in the text. In other words, every font has different character order. Suppose you have a document that starts with word "OUROBOROS", then characters in its font will get these character codes (CC):
 
 | Letter | O |U |R |O |B |O |R |O |S |
-|---|---|---|---|---|---|---|---|---|---|
-| CID | 1 |2 |3 |1 |4 |1 |3 |1 |5 |
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Character code (CC) | 1 |2 |3 |1 |4 |1 |3 |1 |5 |
 
-Notice that CID for letter "O" gets repeated every time it's needed. These CIDs are linked with glyphs, so the renderer knows what to display at each CID position. Glyphs have their own Glyph IDs (GID) which may be linked to CIDs like this:
-
-| Letter | O | U | R | B | S |
-|---|---|---|---|---|---|
-| CID | 1 | 2 | 3 | 4 | 5 |
-| GID | G79 | G85 | G82 | G66 | G83 |
-
-There is no official or preferred GID naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GIDs were just arbitrary numbers, similar to CIDs. But in the magazines, the GIDs usually have fixed names in Gxxx format. Non-Adobe authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
-
-However, GIDs themselves still don't reliably convey information about which letter they represent. It works only in legacy font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link CIDs with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
+Notice that CC for letter "O" gets repeated every time it's needed. These character codes are linked with glyphs, so the renderer knows what to display at each code position. Glyphs have their own Glyph Names (GN) which may be linked to CCs like this:
 
 | Letter | O | U | R | B | S |
-|---|---|---|---|---|---|
-| CID | 1 | 2 | 3 | 4 | 5 |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| Character code (CC) | 1 | 2 | 3 | 4 | 5 |
+| Glyph name (GN) | G79 | G85 | G82 | G66 | G83 |
+
+There is no official or preferred glyph naming scheme, [as you will see later](#glyph-naming-schemes-and-possible-problems). Indeed, we've seen files where GNs were just arbitrary numbers, similar to CCs. But in the magazines we've repaired, the most glyphs had fixed names in Gxxx format. Non-Adobe authoring programs may use different glyph names, but they usually stay fixed, too. **Type1toUnicode can work only because of this fact.**
+
+However, GNs themselves still don't reliably convey information about which letter they represent. It may work only in legacy font encodings like [WinANSI](https://en.wikipedia.org/wiki/Windows-1252) and [MacRoman](https://apple.fandom.com/wiki/Mac-Roman_encoding), but these are limited to about 220 characters, which is insufficient for modern documents. So in 1996, Adobe introduced toUnicode tables into PDF version 1.2. These are separate tables that link character codess with their [Unicode](https://en.wikipedia.org/wiki/Unicode) equivalent. For OUROBOROS, the toUnicode table would look like this:
+
+| Letter | O | U | R | B | S |
+|:---:|:---:|:---:|:---:|:---:|:---:|
+| Character code (CC) | 1 | 2 | 3 | 4 | 5 |
 | toUnicode | 004F | 0055 | 0052 | 0042 | 0053 |
 
 **If you copy+paste garbled text from your PDF, it usually means these toUnicode tables are missing or are generated incorrectly.**
 
 ## How Type1toUnicode works internally
 
-Type1toUnicode repairs the documents by generating new toUnicode tables and inserting them into the PDF files. As mentioned above, it leverages the fact that GIDs usually have fixed names for given letters. This is where the JSON mapping file comes in - if it contains correct GID-Unicode pairs, it can be used to construct valid CID-toUnicode tables. Grossly simplified, it works like this:
+Type1toUnicode repairs the documents by generating new toUnicode tables and inserting them into the PDF files. PDF viewers will then prefer it instead of the broken original encoding. As mentioned above, Type1toUnicode leverages the fact that glyphs usually have fixed names for given letters. This is where the JSON mapping file comes in - if it contains correct GN-Unicode pairs, it can be used to construct valid CC-toUnicode tables. Grossly simplified, it works like this:
  
- **Read a CID -> read GID linked to the CID -> look up the GID in JSON mapping file and get its Unicode value -> add new CID-Unicode pair into the toUnicode table.**
+ **Read a CC -> read GN linked to the CC -> look up the GN in JSON mapping file and get its Unicode value -> add new CC-Unicode pair into the toUnicode table.**
  
-This process has to be repeated for all CIDs in every font, because the PDF standard requires that CID-Unicode table must have exactly the same length as CID-GID table.
+This process has to be repeated for all CCs in every font, because the PDF standard requires that CC-Unicode table must have exactly the same length as CC-GN table.
 
-## How to find the correct GID-Unicode pairs
+## How to find the correct GN-Unicode pairs
 
 This is where the real work begins, because you may need to manually construct the correct mapping. We've found only one effective way how to do it and it requires trial version of Infix PDF Editor:
 
 https://www.iceni.com/infix.htm
 
-Trial is limited to 30 days which should be more than enough to fine-tune your JSON file. Plus, the company offers cheap monthly subscription after that.
+Trial is limited to 30 days, but you will be able to use it even after it expires. (The company offers cheap monthly subscription if you wish to support them).
 
-**Rule #1: unless necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are for headings, image labels, special symbols (greek, math, dingbat etc.) and other "auxilliary" content. It's pretty common that such fonts contain less than 10 characters and contribute little practical information. We've even encountered "invisible" fonts - they were in the font list, but they weren't used anywhere within the document. Symbol fonts in particular are very laborious to repair, as we can tell from our experience. Nevertheless, [to_unicode.json](to_unicode.json) does contain maps for some such fonts; we were repairing about 200 similar magazines, so the effort was more justified. Remember: if you want to skip some font family, simply don't put its name anywhere within the JSON file.
+**Rule #1: unless necessary, don't try to repair all the fonts.** Real-world documents may contain dozens of fonts, but usually only one or two of them hold bulk of the text. The rest are for headings, image labels, special symbols (greek, math, dingbat etc.) and other "auxilliary" content. It's pretty common that such fonts contain less than 10 characters and contribute little practical information. We've even encountered "ghost" fonts - they were in the font list, but they weren't used anywhere within the document. Symbol fonts in particular are very laborious to repair, as we can tell from our experience. Nevertheless, [to_unicode.json](to_unicode.json) does contain maps for some such fonts; we were repairing about 200 similar magazines, so the effort was more justified. Remember: if you want to skip some font family, simply don't put its name anywhere within the JSON file.
  
 So as the first step, you need to decide which font families you wish to repair and which ones you'll ignore. This is where Infix PDF Editor comes in handy for the first time. If you activate "Edit text" mode and click anywhere into text, its font name will be displayed in the small field on the left.
  
@@ -212,20 +214,19 @@ So as the first step, you need to decide which font families you wish to repair 
 
 **Rule #2: if you decide some font family is important, try to make its JSON character map as complete as possible.** You should do this for two reasons:
 
-
-1. As mentioned earlier, the new toUnicode table must always have the same length as CID-GID table. If a GID is not found within the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GIDs are found), the script would replace **all** characters with spaces!!
+1. As mentioned earlier, the new toUnicode table must always have the same length as CC-GN table. If a GN is not found within the JSON file, Type1toUnicode replaces it with space (U+0020). In the extreme case (no GNs are found), the script would replace **all** characters with spaces!!
 
 2. If too many characters are undefined, the log files will become flooded with "Glyph Gxxx not found in mapping" messages, particularly if the document contains multiple fonts from the same family. That makes them hard to read and mass-analyze with tools like Grep.
 
-Okay, so how do you find the GID-Unicode pairs in practice? This is the real reason you'll need Infix PDF Editor; it's probably the only user-friendly program that can display how each glyph looks like. Suppose you'll see "Font /GKCKNF+Arial062.5 -> Glyph G232 not found in mapping" in the log. You need to load the PDF into Infix and then select "Text -> Remap fonts" in the main menu. This window will open:
+Okay, so how do you find the GN-Unicode pairs in practice? This is the real reason you'll need Infix PDF Editor; it's probably the only user-friendly program that can display how each glyph looks like. Suppose you'll see "Font /GKCKNF+Arial062.5 -> Glyph G232 not found in mapping" in the log. You need to load the PDF into Infix and then select "Text -> Remap fonts" in the main menu. This window will open:
 
 ![Infix remap menu](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/5ca31691-7964-45ee-9ef2-adceb8fd9308)
 
-Then you must select the correct font in the drop-down menu in the upper left corner. Infix will display all glyphs that are present in this font. Now you have to find glyph G232, their names (GIDs) are displayed in the Raw Glyph field. The problem is, you don't know how the glyph looks like (which letter it represents). And unfortunately, Infix can't sort or filter the glyphs by their name (GID), it always displays them by their CID order. That means you have to manually go through the glyphs until you find G232. In the image, it's small latin letter C with caron, or "č". Now you have to manually find Unicode equivalent for this letter. The simplest way is to google it, but there are also specialized sites with entire Unicode listings, such as [Compart.com](https://www.compart.com/en/unicode/block/U+0100) or [Xah Code](http://xahlee.info/comp/unicode_index.html). These have been really useful when looking up Greek, math and dingbat characters. Either way, letter "č" has Unicode code 010D, which is what you need to add to your JSON file.
+Then you must select the correct font in the drop-down menu in the upper left corner. Infix will display all glyphs that are present in this font. Now you have to find glyph G232, their names (GNs) are displayed in the Raw Glyph field. The problem is, you don't know how the glyph looks like (which letter it represents). And unfortunately, Infix can't sort or filter the glyphs by their name (GN), it always displays them by their CC order. That means you have to manually go through the glyphs until you find G232. In the image, it's small latin letter C with caron, or "č". Now you have to manually find Unicode equivalent for this letter. The simplest way is to google it, but there are also specialized sites with entire Unicode listings, such as [Compart.com](https://www.compart.com/en/unicode/block/U+0100) or [Xah Code](http://xahlee.info/comp/unicode_index.html). These have been really useful when looking up Greek, math and dingbat characters. Either way, letter "č" has Unicode code 010D, which is what you need to add to your JSON file.
 ```json
         "G232": "010D",
 ```
-Infix has another very useful feature, which is a bit hidden. If you select some text with cursor, then the "Text -> Remap fonts" menu will be replaced with "Text -> Remap selected characters". This will limit the Remap window only to the selected characters, as you can see in the image below. What's even better, characters are now sorted by their order in the selected text, not by their (arbitrary) CID. Note that some PDF documents mix different fonts even within single words; if that happens, you need to switch between them in the drop-down menu.
+Infix has another very useful feature, which is a bit hidden. If you select some text with cursor, then the "Text -> Remap fonts" menu will be replaced with "Text -> Remap selected characters". This will limit the Remap window only to the selected characters, as you can see in the image below. What's even better, characters are now sorted by their order in the *selected* text, not by their (arbitrary) CC. Note that some PDF documents mix different fonts even within single words; if that happens, you need to switch between them in the drop-down menu.
 
 ![Infix remap selected](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/69716953-3edb-4833-a71f-8bd2194e57f2)
 
@@ -237,30 +238,30 @@ Again, don't rely on it. Even when Infix displays some font in green, it usually
 
 ## Glyph naming schemes and possible problems
 
-Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph (GID) naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the czech magazines predominantly used Gxxx scheme.
+Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the czech magazines predominantly used Gxxx scheme.
 
-* First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to optimize file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create separate JSON file for every PDF document, but that would be very time-consuming.
+* First of all, **beware of glyph names with numbers 0 to 31,** like G20 or g3. These frequently aren't fixed and their glyph (and thus Unicode equivalent) changes file from file. There are historical reasons why it happens. In short, ASCII codes 0 to 31 are reserved for unprintable control characters. So in order to optimize file size, some PDF authoring programs replace them with actual printable glyphs. However, this replacement may be arbitrary. If you want to repair such glyphs in multiple documents, you need to cross-compare them to make sure they're really fixed. Theoretically, you could also create a separate JSON file for every PDF document, but that would be very time-consuming.
 
 * **Glyphs G232 and g232 may have different toUnicode mapping!** Type1toUnicode glyph name search subroutine is case-sensitive because of this, and you **must** put exact glyph names into the JSON file. Nevertheless, the mapping is usually identical for standard ASCII (codes 32 to 126), only then it starts to differ. We're not sure which fonts or programs use the gxxx scheme. 
 
 * Glyph numbering may not be decadic, but hexadecimal. An example is section for font family MSTT31, near bottom of [to_unicode.json](to_unicode.json). Notice the hexadecimal numbers equal their Unicode code for standard ASCII characters, but start to differ from 80h (128 decadic) upwards.
 
-* In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on.
+* In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on. These should always be fixed, or at least we haven't seen any document where they weren't.
 
-* In some PDF documents, GIDs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
+* In some PDF documents, GNs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
 
 ## Is there a more effective way to construct the JSON file?
-If there is, we didn't find it. In our case, the GID naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
+If there is, we didn't find it. In our case, the glyph naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
 
 1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), it had name "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
 
   https://eng.m.fontke.com/font/11694129/download/
 
-  Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has GID G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
+  Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has name G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
 
 ![fontforge](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8343947d-98b7-4fc1-8779-dc7938889c1c)
 
-2. So presumably, the actual GIDs are chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" as PDF Producer in its metadata. Other magazines list "PageMaker 6.5" in the Application field.
+2. So presumably, the actual GNs are chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" as PDF Producer in its metadata. Other magazines list "PageMaker 6.5" in the Application field.
 
 In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
 
