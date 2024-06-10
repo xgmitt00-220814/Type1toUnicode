@@ -2,7 +2,7 @@
 
 # Keywords
 
-PDF copy-paste gibberish, mojibake, PDF font encoding repair, Type1 font, toUicode table, Python, Windows executable
+PDF copy-paste gibberish, mojibake, PDF font encoding repair, Type1 font, toUnicode table, Python, Windows executable
 
 # Oprava textu v časopisech AMARO
 
@@ -30,13 +30,11 @@ Oprava podporovaných časopisů je téměř stoprocentní, včetně řecké abe
 
 Je nejasné, proč všechny ty časopisy měly až do roku 2022 špatné kódování textu. Nicméně je/bylo to **Amatérské** radio a ten amatérizmus se holt projevil i tímto způsobem. Inu, nikdo nejsme dokonalý. Naštěstí po přechodu na nový grafický design od PE 04/2023 je už kódování správně a v časopisech jde konečně hledat.
 
-Opravný skript vzniknul v rámci diplomové práce ["Skripty pro hromadnou úpravu fontů v PDF dokumentech"](https://hdl.handle.net/11012/246071) na [Ústavu telekomunikací](https://www.utko.fekt.vut.cz/) na [Vysokém učení technickém v Brně](https://www.vut.cz/). Tento český a anglický návod byl vytvořen vedoucím práce. 
-XXXXXXXXXXXXX po obhajobe link 
-Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (slovensky) nebo anglický návod níže.
+Opravný skript vzniknul v rámci diplomové práce ["Skripty pro hromadnou úpravu fontů v PDF dokumentech"](https://hdl.handle.net/11012/246071) na [Ústavu telekomunikací](https://www.utko.fekt.vut.cz/) na [Vysokém učení technickém v Brně](https://www.vut.cz/). Tento český a anglický návod byl vytvořen vedoucím práce. Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (slovensky) nebo anglický návod níže.
 
  # Before you start
 
-You're probably here because you have a PDF file with garbled text ("mojibake") - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and our script "Type1toUnicode" can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages may still be garbled.
+You're probably here because you have a PDF file with garbled text ("mojibake") - it looks fine on screen, but you get only gibberish when you try to copy+paste it. There are many reasons why text encoding can be wrong in PDF files and our script "Type1toUnicode" can repair only one case. Using the script properly can become a time-consuming task, but you may spare yourself the hassle. Do you really need to permanently fix your PDF files? Or do you merely need to copy some text? If so, there may be a faster way: we've accidentally discovered **that [open-source viewer Evince](https://wiki.gnome.org/Apps/Evince) can return meaningful text even on files that are completely garbled in other PDF viewers** (we tested Adobe Reader, Sumatra PDF, PDF-XChange Viewer, Mozilla Firefox, Google Chrome and others). It's probably because Evince internally uses some sort of heuristics. Nevertheless, even Evince will usually correctly copy only standard ASCII characters (codes 32 to 126); special characters for foreign languages may still be garbled.
 
 If you don't need to preserve document's fidelity, garbled text can be permanently fixed via OCR. Each page is rendered as ordinary raster image (it's called "flattening") and then fed to OCR. However, most OCR algorithms still struggle with diacritics, math and/or non-latin characters, so the extracted text usually contains errors. Also, vector graphics may not be preserved, depending on how smart the OCR algorithm is. That may significantly increase file size. Nevertheless, there are programs that can do it, [Ghostscript's virtual OCR device with -sUseOCR=AsNeeded parameter"](https://ghostscript.com/docs/9.54.0/Devices#PDFwriteocr) in particular employs a similar repair approach as our script.
 
@@ -46,7 +44,7 @@ Type1toUnicode can preserve 100% document fidelity with minimal file size increa
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained in later chapter](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained in later chapter](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box (you will probably encounter Windows security warnings when you run them for the first time). If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
@@ -57,11 +55,11 @@ All can be installed with pip
 ```
 pip3 install xxxxxxxx
 ```
-Note that the scripts were developed and tested only with these library versions and only on Windows 10. We have no idea if they'd work on other operating systems. Also, you will probably encounter Windows security warnings when you try to run the EXE files for the first time.
+Note that the scripts were developed and tested only with these library versions and only on Windows 10. We have no idea if they'd work on other operating systems. 
 
 # Analyzing your PDF files
 
-Since Type1toUnicode has some limitations, first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. Most importantly, the script can repair only [one PDF font type](https://www.prepressure.com/fonts/basics/type1), that's why we've chosen such a "weird" name. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
+Since Type1toUnicode has some limitations, first you need to determine whether your PDF file(s) can even be repaired. We specifically designed the script to help you with such an analysis. You don't need to understand the details, but the script can repair only [one PDF font type](https://www.prepressure.com/fonts/basics/type1), that's why we've chosen such a "weird" name. Let's start with its command-line syntax, which is also printed if you run the script without any arguments:
 
 ```
 the following arguments are required: -p/--pdf_file, -f/--font_map
@@ -87,9 +85,9 @@ If it manages to repair some font(s), it will create an output PDF file with suf
 ```
 Type1toUnicode -p ABCD.PDF -f multi_ascii.json -v
 ```
-Note that Type1toUnicode always tries to fix the files, even when you use the -v argument. Therefore, it also generates the output files every time you run it. It's designed to automatically overwrite them, so you don't need to delete them manually. After the initial run, you need to check the (verbose) logs. Real-world documents usually contain fonts of varying types and encodings, sometimes dozens of them. Without going into unnecessary technical details (yet), you may encounter several cases:
+Note that Type1toUnicode always tries to fix the files, even when you use the -v argument. Therefore, it also generates the output files every time you run it. It's designed to automatically overwrite them, so you don't need to delete them manually. After the initial run, you need to check the (verbose) logs. Real-world documents usually contain fonts of varying types and encodings, sometimes there are dozens of them. Type1toUnicode analyzes every font and logs ones it's unable to repair for whatever reason. Without going into unnecessary technical details, you may encounter several cases:
 
-1. If the script completely repaired all fonts, only the final statistic will appear in the log and it will say "0 fonts skipped, 0 fonts repaired partially". In other words, only fonts that have some sort of problem get mentioned in the log. 
+1. If the script didn't encounter any problems, only the final statistic will appear in the log and it will say "0 fonts skipped, 0 fonts repaired partially, XX font repaired completely". That's very rare, however.
 
 2. Lines "no matching mapping name found in JSON file -> skipping" mean the script could repair such fonts, but it couldn't find proper mapping section in the JSON file. You need to create such a section, or rename existing one.
 
