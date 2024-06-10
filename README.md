@@ -93,7 +93,7 @@ Note that Type1toUnicode always tries to fix the files, even when you use the -v
 
 3. Lines with "no matching font section found in JSON file -> using alternative name" mean that the fonts were repaired using a "recycled" mapping in JSON file. This is actually a really nifty feature which will be [explained later](#font-names-matching-and-alternative-names).
 
-4. Lines with "Glyph XYZ not found in mapping" mean the script repaired the font only partially, because the JSON mapping file is incomplete. Total number of such fonts will also appear in the final statistic. If this happens, you **must** add all missing characters to the JSON file, otherwise they will also miss in the repaired text. Again, this is [explained later](#how-to-find-the-correct-gid-unicode-pairs).
+4. Lines with "Glyph XYZ not found in mapping" mean the script repaired the font only partially, because the JSON mapping file is incomplete. Total number of such fonts will also appear in the final statistic. If this happens, you **must** add all missing characters to the JSON file, otherwise they will also miss in the repaired text. Again, this is [explained later](#how-to-find-the-correct-gn-unicode-pairs).
 
 5.  If you encounter these lines, it either means the associated fonts already have proper encoding or the script can't repair them:
 * "Font has other type than Type1 -> skipping"
