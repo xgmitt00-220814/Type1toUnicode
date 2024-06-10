@@ -30,7 +30,7 @@ Oprava podporovaných časopisů je téměř stoprocentní, včetně řecké abe
 
 Je nejasné, proč všechny ty časopisy měly až do roku 2022 špatné kódování textu. Nicméně je/bylo to **Amatérské** radio a ten amatérizmus se holt projevil i tímto způsobem. Inu, nikdo nejsme dokonalý. Naštěstí po přechodu na nový grafický design od PE 04/2023 je už kódování správně a v časopisech jde konečně hledat.
 
-Opravný skript vzniknul v rámci diplomové práce "Skripty pro hromadnou úpravu fontů v PDF dokumentech" na [Ústavu telekomunikací](https://www.utko.fekt.vut.cz/) na [Vysokém učení technickém v Brně](https://www.vut.cz/). Tento český a anglický návod byl vytvořen vedoucím práce. 
+Opravný skript vzniknul v rámci diplomové práce ["Skripty pro hromadnou úpravu fontů v PDF dokumentech"](https://hdl.handle.net/11012/246071) na [Ústavu telekomunikací](https://www.utko.fekt.vut.cz/) na [Vysokém učení technickém v Brně](https://www.vut.cz/). Tento český a anglický návod byl vytvořen vedoucím práce. 
 XXXXXXXXXXXXX po obhajobe link 
 Pokud vás zajímá, jak skript interně funguje, přečtěte si tu diplomku (slovensky) nebo anglický návod níže.
 
@@ -265,7 +265,7 @@ If there is, we didn't find it. In our case, the glyph naming scheme was consist
 
 In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
 
-BTW, open-source [font editor FontForge](https://fontforge.org/) can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
+BTW, FontForge can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
 
 1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about **half** of all files we tried.
 
@@ -333,15 +333,15 @@ Read [this article](https://www.gnostice.com/nl_article.asp?id=383) to give you 
 
 Obviously, if a font is not Type1 font, Type1toUnicode will print "Font has other type than Type1 -> skipping" into the (verbose) log. If a font already has a toUnicode table, then it prints "ToUnicode already exists -> skipping" into the log.
 
-Like explained in previous chapters, Type1toUnicode requires glyph names (GIDs) to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. Moreover, CID to GID mapping (or GID order) is normally obtained by decoding Contents, i.e. the actual text that's stored within the document. We tried to decode the data, but it was too complicated - in essence, it would be like partially programming a PDF viewer. PDFtalk Snooper doesn't help much here - you can view the data if you expand Font Name -> FontDescriptor -> FontFile:PDFStream -> Internal sub-tree, but PostScript interpreter would be needed to get anything meaningful.
+Like explained in previous chapters, Type1toUnicode requires glyph names (GNs) and their order to work, but they're surprisingly hard to obtain. Normally they're hidden in the font's raw data (PDFStream) which is embedded within the PDF file. Type1 fonts are in PostScript language and the stream is normally decoded with a PostScript interpreter. However, such intepreters usually aren't designed to collect glyph names and pass them to an "outside" program. Glyph names and their data are stored in /CharStrings dictionary, so we would need to *somehow* loop through all entries. PDFtalk Snooper doesn't help much here - you can view the data if you expand Font Name -> FontDescriptor -> FontFile:PDFStream -> Internal sub-tree, but they look like gibberish.
 
 ![Snooper_internal](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/961f82a6-cd31-4222-86bb-c1272b903ca5)
 
-Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally devised as a supplement for legacy encodings like WinANSI or MacRoman. These were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Such fonts are then regarded as having "custom encoding", like in the font list above. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Differences tables contain GIDs in the same order as CIDs, making it was unnecessary to decode the contents. If a font has Differences table, you can view it if you expand its Encodning subtree in PDFtalk Snooper:
+Fortunately, there was another way. Most of the czech magazines used fonts whose characters were completely replaced via Differences table. Differences table was originally devised as a supplement for legacy encodings like WinANSI or MacRoman. These were limited to 255 characters, which is not nearly enough to cover most Latin-script languages (let alone other languages). If other characters were required, they could be replaced via Differences table. Such fonts are then regarded as having "custom encoding", like in the font list above. Normally, the number of replacements is low, but for some arcane reason, all characters were replaced in the magazines. Such Differences tables contain GNs in the same order as CCs, making it was unnecessary to decode font data. If a font has Differences table, you can view it if you expand its Encodning subtree in PDFtalk Snooper:
 
 ![Snooper_Differences](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/cd3b540d-bef0-44f7-b60c-41e2e490a5b1)
 
-One last obstacle remained - how to check that all characters were really replaced. This is where FirstChar and LastChar entries come in. If LastChar-FirstChar matches the numbner of entries in the Differences table, then it means all characters were replaced. If they're not, the script prints "no ToUnicode but Differences incomplete -> skipping" into the log. In some fonts,  FirstChar, LastChar and/or entire FontDescriptor is missing ([PDF standard allows it](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm)). Type1toUnicode can't repair such fonts and prints "FontDescriptor entries missing -> skipping" messages in the (verbose) logs.
+One last obstacle remained - how to check that all characters were really replaced, again without decoding font data. This is where FirstChar and LastChar entries come in. If LastChar-FirstChar matches the numbner of entries in the Differences table, then it means all characters were replaced. If they're not, the script prints "no ToUnicode but Differences incomplete -> skipping" into the log. In some fonts,  FirstChar, LastChar and/or entire FontDescriptor is missing ([PDF standard allows it](https://www.verypdf.com/document/pdf-format-reference/txtidx0413.htm)). Type1toUnicode can't repair such fonts and prints "FontDescriptor entries missing -> skipping" messages in the (verbose) logs.
 
 If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, it looks like this:
 
@@ -351,14 +351,14 @@ If you open the sample file in PDFtalk Snooper and expand Resources-Font tree, i
 # Possible further work
 Just some ideas in case someone wants to build upon this...
 
-* Type1toUnicode now requires Differences table for all glyphs in the font. Theoretically, it could be modified to also fix fonts that employ the original idea behind Differences, i.e. take some standard encoding like WinANSI and replace only a few glyphs within it. There are many unknowns, for example how to reliably identify the original encoding and GIDs within it.
+* Type1toUnicode now requires Differences table for all glyphs in the font. Theoretically, it could be modified to also fix fonts that employ the original idea behind Differences, i.e. take some standard encoding like WinANSI and replace only a few glyphs within it. There are many unknowns, for example how to reliably identify the original encoding and GNs within it.
 
 * Manual glyph identification via Infix PDF Editor is still too laborious. Feed the glyphs into OCR and construct JSON mapping automatically? User could only confirm and/or manually correct whatever glyphs OCR doesn't get right.
 
-* Use image similarity algorithm and/or OCR to automatically cross-compare GIDs between multiple documents?
+* Use image similarity algorithm and/or OCR to automatically cross-compare GNs between multiple documents?
 
-* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script would then construct toUnicode tables based on the hashes, not GIDs. It would be possible to fully automatically repair even documents where GIDs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unknown: does glyph binary data change with font's size (height)? If so, it would be a major obstacle. It looks like that in FontForge for Arial fonts, but it may be just rendering issue. Is there an open-source library to separate glyphs in a font's byte string? Infix does it somehow.
+* Or even better: use OCR/user input to identify the glyphs, but store their hash. Hash would be computed from the glyphs' binary data. Build big database of such glyph hashes. Script would then construct toUnicode tables based on the hashes, not GNs. It would be possible to fully automatically repair even documents where GNs are arbitrary. (Many fonts are copyrighted, so only glyph hashes can be distributed legally). Unfortunately, glyph data may change with font's size (height) because of [hinting](https://en.wikipedia.org/wiki/Font_hinting) and other typographical "tricks". It happens extensively in the czech magazines, which means that every font size would need separate hash table. That would be very laborious to make.
 
 # Credits
-The scripts were developed as part of master's thesis "Skripty pro hromadnou úpravu fontů v PDF dokumentech" at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
+The scripts were developed as part of master's thesis ["Skripty pro hromadnou úpravu fontů v PDF dokumentech"](https://hdl.handle.net/11012/246071) at [Brno University of Technology](https://www.vut.cz/en/), Faculty of Electrical Engineering and Communications, [Dept. of Telecommunications](https://www.utko.fekt.vut.cz/en). This czech and english manual was created by thesis advisor.
 
