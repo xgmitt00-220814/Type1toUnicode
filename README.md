@@ -101,6 +101,7 @@ Note that Type1toUnicode always tries to fix the files, even when you use the -v
 * "FontDescriptor entries missing -> skipping"
 * "table Differences does not exist -> skipping"
 * "no ToUnicode but Differences incomplete  -> skipping"
+
 Obviously, all such fonts increase the "XX fonts skipped" counter in the final statistic.
 
 6. "no Font objects on the page" happens on pages that contain only images, most commonly in scanned documents. You'd need to use an OCR software to extract text from such pages.
