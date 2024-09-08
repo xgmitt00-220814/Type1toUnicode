@@ -16,14 +16,11 @@ Pointa skriptu je, že každý čtenář si může svoji sbírku opravit sám - 
 
 2. Zde z Githubu si stáhněte a do stejného adresáře uložte soubory skriptu. Pro funkci jsou nezbytné jen 4 soubory: [opravAR.exe](opravAR.exe), [magazine_hash.json](magazine_hash.json), [Type1toUnicode.exe](Type1toUnicode.exe) a [to_unicode.json](to_unicode.json). Stahování se bohužel nespustí automaticky, u každého souboru musíte kliknout na "Download raw file" vpravo nad obsahem souboru. Alternativně můžete stáhnout všechny soubory najednou jako ZIP archív, dělá se to zeleným tlačítkem Code -> Download ZIP.
 
-3. Spusťte opravAR.exe. Pravděpodobně se objeví [modré okno Windows s varováním SmartScreen](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345), to musíte potvrdit. Oprava typicky zabere několik minut, podle počtu souborů a výkonu PC. Skript nemá žádné GUI, výsledky jeho činnosti se zobrazují pouze v konzoli příkazové řádky. Většinou se v ní zobrazují pouze zelené řádky se statistikou oprav, u některých ročníků tam jsou i oranžové řádky s varováními. Ty můžete ignorovat. Nikdy by se však neměly objevit červené řádky s chybami.
+3. Spusťte opravAR.exe. Pravděpodobně se objeví [modré okno s varováním SmartScreen](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345), to musíte potvrdit. Tato okna se liší podle verze Windows, buď je tam přímo tlačítko "Přesto spustit" nebo nejdřív musíte kliknout na "Další informace". Samotná oprava pak typicky zabere několik minut, podle počtu souborů a výkonu PC. Skript nemá žádné GUI, výsledky jeho činnosti se zobrazují pouze v konzoli příkazové řádky. Většinou se v ní zobrazují pouze zelené řádky se statistikou oprav, u některých ročníků tam jsou i oranžové řádky s varováními. Ty můžete ignorovat. Nikdy by se však neměly objevit červené řádky s chybami.
 
 4. Na disku se objeví opravené PDF soubory s koncovkou _repaired a také adresáře s podrobnějšími logy o průběhu opravy. Logy a původní PDF z CD/DVD poté můžete smazat. To uděláte nejsnadněji tak, že je nejdřív seřadíte podle data, originální PDF soubory jsou vždy starší než opravené.
 
 Skript byl vyvíjen a testován pouze na Windows 10, funkci na jiných OS neznáme. Zde je pro ukázku jedna stránka (snad se firma AMARO nebude zlobit) před a po opravě, zkuste si z nich vykopírovat text:
-
-![SmartScreen_varovani](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345)
-
 
 [T1tU_sample.zip](https://github.com/user-attachments/files/16921939/T1tU_sample.zip)
 
@@ -47,7 +44,7 @@ Type1toUnicode can preserve 100% document fidelity with minimal file size increa
 
 # How to run the scripts
 
-There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained in later chapter](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box (you will probably encounter Windows security warnings when you run them for the first time). If you want to run the .py files, you will need following libraries:
+There are actually two scripts in this repository, Type1toUnicode and opravAR. Both are available as Python sources and Windows executables (compiled with [PyInstaller 6.6.0](https://pyinstaller.org/en/stable/)). Python 3.12.3 was used during testing. You will probably need only Type1toUnicode, although what opravAR does is [explained in later chapter](#script-opravar-for-user-friendly-repair). The executables already contain all the necessary libraries, so they run right out the box. You will probably encounter [blue SmartScreen filter warnings](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345) when you run them for the first time. These warnings vary between Windows versions, either there is "Run anyway" button or you need to click on "More information" first. If you want to run the .py files, you will need following libraries:
 
 * pypdf				4.2.0			https://pypdf.readthedocs.io/en/stable/
 * jellyfish			1.0.3			https://github.com/jamesturk/jellyfish
@@ -248,7 +245,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 
 * Glyph numbering may not be decadic, but hexadecimal. An example is section for font family MSTT31, near bottom of [to_unicode.json](to_unicode.json). Notice the hexadecimal numbers equal their Unicode code for standard ASCII characters, but start to differ from 80h (128 decadic) upwards.
 
-* In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on. These should always be fixed, or at least we haven't seen any document where they weren't.
+* In some fonts, glyphs names are human-readable, such as "zero", "zcaron", "epsilon" and so on. These names are defined in [Adobe Glyph List](https://en.wikipedia.org/wiki/Adobe_Glyph_List) and theoretically, all PDF readers should recognize them. In other words, text from such fonts should always be copied correctly, or at least we haven't seen any document where they weren't.
 
 * In some PDF documents, GNs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
 
