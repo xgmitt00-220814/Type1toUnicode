@@ -16,13 +16,16 @@ Pointa skriptu je, že každý čtenář si může svoji sbírku opravit sám - 
 
 2. Zde z Githubu si stáhněte a do stejného adresáře uložte soubory skriptu. Pro funkci jsou nezbytné jen 4 soubory: [opravAR.exe](opravAR.exe), [magazine_hash.json](magazine_hash.json), [Type1toUnicode.exe](Type1toUnicode.exe) a [to_unicode.json](to_unicode.json). Stahování se bohužel nespustí automaticky, u každého souboru musíte kliknout na "Download raw file" vpravo nad obsahem souboru. Alternativně můžete stáhnout všechny soubory najednou jako ZIP archív, dělá se to zeleným tlačítkem Code -> Download ZIP.
 
-3. Spusťte opravAR.exe. Pravděpodobně se objeví modré okno Windows s výstrahou zabezpečení, to musíte potvrdit. Oprava typicky zabere několik minut, podle počtu souborů a výkonu PC. Skript nemá žádné GUI, výsledky jeho činnosti se zobrazují pouze v konzoli příkazové řádky. Většinou se v ní zobrazují pouze zelené řádky se statistikou oprav, u některých ročníků tam jsou i oranžové řádky s varováními. Ty můžete ignorovat. Nikdy by se však neměly objevit červené řádky s chybami.
+3. Spusťte opravAR.exe. Pravděpodobně se objeví [modré okno Windows s varováním SmartScreen](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345), to musíte potvrdit. Oprava typicky zabere několik minut, podle počtu souborů a výkonu PC. Skript nemá žádné GUI, výsledky jeho činnosti se zobrazují pouze v konzoli příkazové řádky. Většinou se v ní zobrazují pouze zelené řádky se statistikou oprav, u některých ročníků tam jsou i oranžové řádky s varováními. Ty můžete ignorovat. Nikdy by se však neměly objevit červené řádky s chybami.
 
 4. Na disku se objeví opravené PDF soubory s koncovkou _repaired a také adresáře s podrobnějšími logy o průběhu opravy. Logy a původní PDF z CD/DVD poté můžete smazat. To uděláte nejsnadněji tak, že je nejdřív seřadíte podle data, originální PDF soubory jsou vždy starší než opravené.
 
 Skript byl vyvíjen a testován pouze na Windows 10, funkci na jiných OS neznáme. Zde je pro ukázku jedna stránka (snad se firma AMARO nebude zlobit) před a po opravě, zkuste si z nich vykopírovat text:
 
-[T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
+![SmartScreen_varovani](https://github.com/user-attachments/assets/a067c6a6-d85b-4f68-8123-b2fc8f61d345)
+
+
+[T1tU_sample.zip](https://github.com/user-attachments/files/16921939/T1tU_sample.zip)
 
 Oprava podporovaných časopisů je téměř stoprocentní, včetně řecké abecedy a jiných "exotických" znaků. Většinou nejdou opravit jen stránky s reklamami, ale ty jsou irelevantní. Je nutné zdůraznit, že **skript umí opravit pouze časopisy A-Radio Praktická Elektronika (2000-současnost), Konstrukční elektronika (2000-2011) a Electus (2000-2007).** Tyto časopisy mají totálně špatné kódování, takže text je v nich "rozsypaný čaj" a nejde v nich vůbec vyhledávat. Časopisy Amatérské rádio (řada A + řada B, později Stavebnice a konstrukce) sice také mají špatné kódování, ale většina textu je čitelná, nesprávně jsou v nich "jen" české znaky. Jsou tedy alespoň částečně použitelné. Skript opravuje PE do roku 2022, postupem času ho budeme aktualizovat. Zde je přehled, co skript aktuálně (verze 0.4.0) umí či neumí opravit:
 
@@ -40,7 +43,7 @@ If you don't need to preserve document's fidelity, garbled text can be permanent
 
 Type1toUnicode can preserve 100% document fidelity with minimal file size increase, but the PDF files must meet several conditions. Here is a PDF sample before and after repair, provided under [fair use doctrine](https://en.wikipedia.org/wiki/Fair_use):
 
-[T1tU_sample.zip](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip)
+[T1tU_sample.zip](https://github.com/user-attachments/files/16921939/T1tU_sample.zip)
 
 # How to run the scripts
 
@@ -135,7 +138,7 @@ So it seems your PDF file(s) could be repaired, but you need to edit or expand t
 
 ## Font names matching and alternative names
 
-In real-world documents, fonts rarely have "clean" names like "Arial". There may be dozens of variants of a given font, each for different size, color, emphasis etc. All fonts must have unique names and PDF authoring programs use different strategies how to make sure they stay unique. In the [sample files](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), actual font names look like
+In real-world documents, fonts rarely have "clean" names like "Arial". There may be dozens of variants of a given font, each for different size, color, emphasis etc. All fonts must have unique names and PDF authoring programs use different strategies how to make sure they stay unique. In the [sample files](https://github.com/user-attachments/files/16921939/T1tU_sample.zip), actual font names look like
 ```
 GKCMAE+Arial068.313
 GKCNLC+Arial.kurz.va058.313
@@ -229,7 +232,7 @@ Infix has another very useful feature, which is a bit hidden. If you select some
 
 ![Infix remap selected](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/69716953-3edb-4833-a71f-8bd2194e57f2)
 
-Notice the small green triangles in the Remap font window. Here Infix displays what it presumes is actual letter the glyph represents. **But don't get fooled by them**, Infix frequently presumes wrong (it wanted to export G232 as "è"). Sometimes the triangles turn red; that occurs when Infix is unable to guess the letter, but it doesn't work consistently. Here is how it looks like for font GKCMAE+Arial068.313 from the [sample file](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip):
+Notice the small green triangles in the Remap font window. Here Infix displays what it presumes is actual letter the glyph represents. **But don't get fooled by them**, Infix frequently presumes wrong (it wanted to export G232 as "è"). Sometimes the triangles turn red; that occurs when Infix is unable to guess the letter, but it doesn't work consistently. Here is how it looks like for font GKCMAE+Arial068.313 from the [sample file](https://github.com/user-attachments/files/16921939/T1tU_sample.zip):
 
 ![Infix-remap-red](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/0490fd32-934c-4104-8224-1a96d1c5b9d9)
 
@@ -252,7 +255,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 ## Is there a more effective way to construct the JSON file?
 If there is, we didn't find it. In our case, the glyph naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
 
-1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip), it had name "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
+1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/user-attachments/files/16921939/T1tU_sample.zip), it had name "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
 
   https://eng.m.fontke.com/font/11694129/download/
 
@@ -313,7 +316,7 @@ Type1toUnicode allows you to analyze fonts within your PDF files (-v switch), bu
 
 https://wiki.pdftalk.de/doku.php?id=pdftalksnooper
 
-It has GUI that can display entire internal PDF object tree and even decode some of the objects. If you want to analyze a font, you need to select the appropriate page and then expand Resources -> Font -> Font Name. Here is how it looks like for [the sample file](https://github.com/xgmitt00-220814/Type1toUnicode/files/15382176/T1tU_sample.zip):
+It has GUI that can display entire internal PDF object tree and even decode some of the objects. If you want to analyze a font, you need to select the appropriate page and then expand Resources -> Font -> Font Name. Here is how it looks like for [the sample file](https://github.com/user-attachments/files/16921939/T1tU_sample.zip):
 
 ![Snooper_tree](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/fe797bbb-9f00-419b-8d70-1f5af301084c)
 
