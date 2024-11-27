@@ -252,19 +252,7 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 * In some PDF documents, GNs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
 
 ## Is there a more effective way to construct the JSON file?
-If there is, we didn't find it. In our case, the glyph naming scheme was consistent across about 200 magazines (barring a few exceptions). Frankly, it's almost suspicious it had remained constant over 20 years. It's possible the editors created their own custom mapping for Czech, Slovak and other languages that usually appear in the magazines. If not, we suspect the the resultant mapping could be affected by two factors:
-
-1. How the glyphs were ordered in the original font. When we decoded font /GKCMAE+Arial068.313 from the [sample document](https://github.com/user-attachments/files/16921939/T1tU_sample.zip), it had name "Monotype:Arial_Regular:Version_2.76_Microsoft_ArialArial068.313". We googled the name and downloaded the font from this site:
-
-  https://eng.m.fontke.com/font/11694129/download/
-
-  Then we loaded it into [open source font editor FontForge](https://fontforge.org/en-US/downloads/). But as you can see, letter "ř" (U+0159) has code 345 in the font, whereas it has name G248 in our JSON file. Letter "č" (U+010D) has code 269 in the font, but G232 in JSON. There is no clear pattern to it.
-
-![fontforge](https://github.com/xgmitt00-220814/Type1toUnicode/assets/169207159/8343947d-98b7-4fc1-8779-dc7938889c1c)
-
-2. So presumably, the actual GNs are chosen by PDF authoring program and/or PostScript driver when it's generated. We have no idea how this works, though. The sample file has "Acrobat Distiller 4.05 for Windows" as PDF Producer in its metadata. Other magazines list "PageMaker 6.5" in the Application field.
-
-In the end, we really constructed [to_unicode.json](to_unicode.json) one glyph at a time...
+In most cases, yes. While glyph naming may be arbitrary, usually it's derived from some pre-existing encoding. The trick is to find out which one, because there [are many of them](https://www.iana.org/assignments/character-sets/character-sets.xhtml). In olden pre-Unicode times, character encodings were specific to operating systems and languages, due to HW and SW limitations. There are even company-specific and/or file format specific encodings, like PDF's built-in [StandardEncoding](https://en.wikipedia.org/wiki/PostScript_Standard_Encoding), WinAnsiEncoding or MacRomanEncoding. So for staters, it's helpful to check your file's metadata for clues which OS and authoring program was used to create it. Then you need to manually identify at least a dozen glyphs (especially codes above 128 decimal), so you can compare it with pre-existing encoding tables. In our case, it was "PageMaker 6.5" and "Acrobat Distiller 4.05 for Windows". And indeed, we soon noticed that GNs match (Windows-1250 code page)(https://cs.wikipedia.org/wiki/Windows-1250#Mapov%C3%A1n%C3%AD_do_Unik%C3%B3du) which was used by Czech language Windows. However, you shouldn't blindly copy-paste it to your JSON file, because there may be differences. In our case, G194 should be U+00C2 (letter Â) according to Windows-1250, but it's actually used for U+22C5 (dot operator) in the magazines. Another major difference is G234, which was changed from romanian letter ę to czech letter ý. In other words, the editors created their own custom encoding, only slightly different from Windows-1250. And fortunately for us, they sticked with it for almost 20 years (barring a few exceptions). Unfortunately, you can't know that beforehand. In the end, we really manually checked all characters in [to_unicode.json](to_unicode.json), one glyph at a time...
 
 BTW, FontForge can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
 
