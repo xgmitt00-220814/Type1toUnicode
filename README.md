@@ -237,6 +237,14 @@ Notice the small green triangles in the Remap font window. Here Infix displays w
 
 Again, don't rely on it. Even when Infix displays some font in green, it usually copy+pastes the text garbled, either completely or for non-ASCII characters.
 
+BTW, if you can't use Infix for whatever reason (you don't use Windows, for example), there is [open source font editor FontForge](https://fontforge.org/) which can display the glyphs, too. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". Unfortunately, it doesn't work very well:
+
+1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about **half** of all files we tried.
+
+2. There is no easy way to switch between fonts within one PDF file. You have to close FontForge, run it again, open the same PDF file and choose a different font.
+
+Infix is much faster to use and far more reliable.
+
 ## Glyph naming schemes and possible problems
 
 Like we previously mentioned, different fonts and/or PDF authoring programs use different glyph naming schemes. Obviously it's impossible to cover them all, but here is what we've encountered so far. You can see most of them in [to_unicode.json](to_unicode.json), although the czech magazines predominantly used Gxxx scheme.
@@ -252,17 +260,9 @@ Like we previously mentioned, different fonts and/or PDF authoring programs use 
 * In some PDF documents, GNs are simply numbers. These are usually generated arbitrarily and change file by file. Again, technically it would be possible to repair them, but you'd have to prepare a separate JSON file for each document.
 
 ## Is there a more effective way to construct the JSON file?
-In most cases, yes. While glyph naming may be arbitrary, usually it's derived from some pre-existing encoding. The trick is to find out which one, because there [are many of them](https://www.iana.org/assignments/character-sets/character-sets.xhtml). In olden pre-Unicode times, character encodings were specific to operating systems and languages, due to HW and SW limitations. There are even company-specific and/or file format specific encodings, like PDF's built-in [StandardEncoding](https://en.wikipedia.org/wiki/PostScript_Standard_Encoding), WinAnsiEncoding or MacRomanEncoding. 
+In most cases, yes. While glyph naming may be arbitrary, usually it's derived from some pre-existing encoding. The trick is to find out which one, because there [are many of them](https://www.iana.org/assignments/character-sets/character-sets.xhtml). In olden pre-Unicode times, character encodings were specific to operating systems and languages, due to HW and SW limitations. There were even company-specific and/or file format specific encodings, like PDF's built-in [StandardEncoding](https://en.wikipedia.org/wiki/PostScript_Standard_Encoding), WinAnsiEncoding or MacRomanEncoding. 
 
-So for staters, it's helpful to check your file's metadata for clues which OS and authoring program was used to create it. Then you need to manually identify at least a dozen glyphs (especially codes above 128 decimal), so you can compare it with pre-existing encoding tables. In our case, it was "PageMaker 6.5" and "Acrobat Distiller 4.05 for Windows". And indeed, we soon noticed that GNs match [Windows-1250 code page](https://cs.wikipedia.org/wiki/Windows-1250#Mapov%C3%A1n%C3%AD_do_Unik%C3%B3du) which was used by Czech language Windows. However, you shouldn't blindly copy-paste it to your JSON file, because there may be differences. In our case, G194 should be U+00C2 (letter Â) according to Windows-1250, but it's actually used for U+22C5 (dot operator) in the magazines. Another major difference is G234, which was changed from romanian letter ę to czech letter ý. In other words, the editors created their own custom encoding, only slightly different from Windows-1250. And fortunately for us, they sticked with it for almost 20 years (barring a few exceptions). Unfortunately, you can't know that beforehand. In the end, we really manually checked all characters in [to_unicode.json](to_unicode.json), one glyph at a time...
-
-BTW, FontForge can display glyphs in PDF files, like Infix PDF Editor does. On the "Open Font" screen, you need to switch "Filter" to "Extract from PDF". But stay away from it:
-
-1. FontForge is **extremely** picky about correct PDF syntax, it refused to open about **half** of all files we tried.
-
-2. There is no easy way to switch between fonts within one PDF file. You have to close FontForge, run it again, open the same PDF file and choose a different font.
-
-Infix is much faster to use and far more reliable.
+So for staters, it's helpful to check your file's metadata for clues which OS and authoring program was used to create it. Then you need to manually identify at least a dozen glyphs (especially codes above 128 decimal), so you can compare it with pre-existing encoding tables. In our case, it was "PageMaker 6.5" and "Acrobat Distiller 4.05 for Windows". And indeed, we soon noticed that for most fonts, glyph order matches [Windows-1250 code page](https://cs.wikipedia.org/wiki/Windows-1250#Mapov%C3%A1n%C3%AD_do_Unik%C3%B3du) which was used by Czech language Windows. However, you shouldn't blindly copy-paste it to your JSON file, because there may be differences. In our case, G194 should be U+00C2 (letter Â) according to Windows-1250, but it's actually used for U+22C5 (dot operator) in the magazines. Another major difference is G234, which was changed from romanian letter "ę" to czech letter "ý". In other words, the editors created their own custom encoding, albeit only slightly different from Windows-1250. Fortunately for us, they sticked with it for almost 20 years. Unfortunately, you can't know that beforehand. In the end, we manually checked all characters in [to_unicode.json](to_unicode.json), one glyph at a tim. But remember: it depends on how accurately you want to repair your PDFs. We had 200 similar magazines, so the effort was more justified.
 
 # Known limitations and issues
 
